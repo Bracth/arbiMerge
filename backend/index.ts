@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { httpServer } from './server';
 import PriceEmitter from './sockets/PriceEmitter';
+import MergerService from './services/MergerService';
 
 const PORT = process.env.PORT || 3000;
 
@@ -24,7 +25,21 @@ async function bootstrap() {
       console.log(`✅ Servidor escuchando en http://localhost:${PORT}`);
     });
 
-    // Iniciamos el bucle de actualización de precios en tiempo real
+    // 1. Obtenemos las fusiones activas para inicializar el caché
+    const activeMergers = await MergerService.getActiveMergers();
+    const symbols = activeMergers.map(m => m.targetTicker);
+
+    // 2. Inicializamos el caché de precios (REST API) con un timeout de 10 segundos
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 10000);
+    
+    try {
+      await PriceEmitter.initializeCache(symbols, ac.signal);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    // 3. Iniciamos el bucle de actualización de precios en tiempo real (WebSocket)
     await PriceEmitter.start();
 
     console.log('✨ Sistema operativo y monitoreando fusiones.');

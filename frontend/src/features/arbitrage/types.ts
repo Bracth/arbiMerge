@@ -16,4 +16,5 @@ export type ConnectionStatus = 'connected' | 'reconnecting' | 'error' | 'idle';
 export interface PriceUpdate {
   ticker: string;
   price: number;
+  timestamp: number;
 }

@@ -7,7 +7,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 export const useMergerWebSocket = () => {
   const socketRef = useRef<Socket | null>(null);
-  const { setConnectionStatus, updateMergerPrice, setError } = useMergerStore();
+  const { setConnectionStatus, updateMergerPrice, updateMultiplePrices, setError } = useMergerStore();
 
   useEffect(() => {
     const socket = io(BACKEND_URL, {
@@ -40,7 +40,11 @@ export const useMergerWebSocket = () => {
     });
 
     socket.on('priceUpdate', (data: PriceUpdate) => {
-      updateMergerPrice(data.ticker, data.price);
+      updateMergerPrice(data.ticker, data.price, data.timestamp);
+    });
+
+    socket.on('initialPrices', (data: { symbol: string, price: number, timestamp: number }[]) => {
+      updateMultiplePrices(data);
     });
 
     return () => {
@@ -49,7 +53,7 @@ export const useMergerWebSocket = () => {
         socketRef.current = null;
       }
     };
-  }, [setConnectionStatus, updateMergerPrice, setError]);
+  }, [setConnectionStatus, updateMergerPrice, updateMultiplePrices, setError]);
 
   return socketRef.current;
 };

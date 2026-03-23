@@ -16,6 +16,17 @@ interface FinnhubMessage {
   type: string;
 }
 
+interface FinnhubQuoteResponse {
+  c: number; // Current price
+  d: number; // Change
+  dp: number; // Percent change
+  h: number; // High price of the day
+  l: number; // Low price of the day
+  o: number; // Open price of the day
+  pc: number; // Previous close price
+  t: number; // Timestamp
+}
+
 export class FinnhubService extends EventEmitter {
   private static instance: FinnhubService;
   private ws: WebSocket | null = null;
@@ -42,6 +53,41 @@ export class FinnhubService extends EventEmitter {
       FinnhubService.instance = new FinnhubService();
     }
     return FinnhubService.instance;
+  }
+
+  /**
+   * Fetches the initial price for a symbol using the Finnhub REST API.
+   */
+  public async fetchInitialPrice(symbol: string, abortSignal?: AbortSignal): Promise<{ symbol: string; price: number; timestamp: number } | null> {
+    try {
+      const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${this.apiKey}`, {
+        signal: abortSignal
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Finnhub API error: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as FinnhubQuoteResponse;
+
+      // Finnhub returns c=0 for invalid symbols or when data is not available
+      if (data.c === 0) {
+        return null;
+      }
+
+      return {
+        symbol,
+        price: data.c,
+        timestamp: data.t * 1000, // Convert seconds to milliseconds to match WebSocket timestamp format
+      };
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.warn(`[FinnhubService] Fetch initial price for ${symbol} was aborted`);
+        return null;
+      }
+      console.error(`[FinnhubService] Error fetching initial price for ${symbol}:`, error);
+      return null;
+    }
   }
 
   private connect(): void {
