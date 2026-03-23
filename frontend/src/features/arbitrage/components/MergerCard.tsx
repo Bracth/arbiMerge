@@ -70,7 +70,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               priceTrend === 'down' && "flash-red"
             )}
           >
-            ${merger.currentPrice.toFixed(2)}
+            ${merger.currentPrice?.toFixed(2)}
           </Typography>
         </div>
         <div className="flex gap-2 text-outline-variant/30">
@@ -81,7 +81,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
             OFFER PRICE
           </Typography>
           <Typography variant="h2" tabular className="text-primary">
-            ${merger.offerPrice.toFixed(2)}
+            ${merger.offerPrice?.toFixed(2)}
           </Typography>
         </div>
       </div>
