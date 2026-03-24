@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { httpServer } from './server';
 import PriceEmitter from './sockets/PriceEmitter';
 import MergerService from './services/MergerService';
+import { getTickersForMonitoring } from './utils/mergerUtils';
 
 const PORT = process.env.PORT || 3000;
 
@@ -25,14 +26,12 @@ async function bootstrap() {
       console.log(`✅ Servidor escuchando en http://localhost:${PORT}`);
     });
 
-    // 1. Obtenemos las fusiones activas para inicializar el caché
     const activeMergers = await MergerService.getActiveMergers();
-    const symbols = activeMergers.flatMap(m => [m.targetTicker, m.buyerTicker].filter(Boolean) as string[]);
+    const symbols = getTickersForMonitoring(activeMergers);
 
-    // 2. Inicializamos el caché de precios (REST API) con un timeout de 10 segundos
     const ac = new AbortController();
     const timeoutId = setTimeout(() => ac.abort(), 10000);
-    
+
     try {
       await PriceEmitter.initializeCache(symbols, ac.signal);
     } finally {
@@ -58,7 +57,7 @@ const shutdown = async (signal: string) => {
       console.log('💤 Servidor HTTP cerrado.');
       process.exit(0);
     });
-    
+
     // Fuerza el cierre después de 5 segundos si no se cierra solo
     setTimeout(() => {
       console.error('⛔ Cierre forzado por tiempo de espera excedido.');
