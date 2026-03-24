@@ -5,6 +5,9 @@ import prisma from './client.js';
 async function main() {
     console.log('🌱 Iniciando el seeding de la base de datos con TypeScript...');
 
+    // Limpiamos la tabla antes de empezar para evitar duplicados o datos viejos
+    await prisma.merger.deleteMany();
+
     // Array tipado con operaciones reales (o realistas) para que las APIs financieras las reconozcan
     const mergers = [
         {
