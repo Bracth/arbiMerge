@@ -7,6 +7,8 @@
   "scripts": {
     "backend": "npm run --workspace=@arbimerge/backend",
     "frontend": "npm run --workspace=@arbimerge/frontend",
-    "shared": "npm run --workspace=@arbimerge/shared"
+    "shared": "npm run --workspace=@arbimerge/shared",
+    "db:seed": "npm run --workspace=@arbimerge/backend db:seed",
+    "frontend:dev": "npm run --workspace=@arbimerge/frontend dev"
   }
 }
