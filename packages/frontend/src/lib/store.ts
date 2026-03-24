@@ -55,7 +55,8 @@ export const useMergerStore = create<MergerState>((set) => ({
             currentPrice,
             effectiveOfferPrice,
             spread,
-            trend
+            trend,
+            lastUpdate: updateTimestamp
           }
           : m
       ),
@@ -74,6 +75,7 @@ export const useMergerStore = create<MergerState>((set) => ({
     const newSpreads: Record<string, number> = {};
     const newTrends: Record<string, TrendType> = {};
     const newEffectiveOfferPrices: Record<string, number> = {};
+    const symbolsActuallyUpdated = new Set<string>();
     let anyUpdated = false;
 
     // Actualizar cach├® de precios y timestamps
@@ -87,6 +89,7 @@ export const useMergerStore = create<MergerState>((set) => ({
         newSpreads[update.symbol] = update.spread;
         newTrends[update.symbol] = update.trend;
         newEffectiveOfferPrices[update.symbol] = update.effectiveOfferPrice;
+        symbolsActuallyUpdated.add(update.symbol);
         anyUpdated = true;
       }
     });
@@ -98,13 +101,26 @@ export const useMergerStore = create<MergerState>((set) => ({
 
     // Actualizar la lista de mergers si ya est├í cargada
     const updatedMergers = state.mergers.map((m) => {
-      if (newPrices[m.targetTicker] !== undefined) {
+      const targetUpdated = symbolsActuallyUpdated.has(m.targetTicker);
+      const buyerUpdated = m.buyerTicker && symbolsActuallyUpdated.has(m.buyerTicker);
+
+      if (targetUpdated || buyerUpdated) {
+        const targetTimestamp = newTimestamps[m.targetTicker] || 0;
+        const buyerTimestamp = m.buyerTicker ? (newTimestamps[m.buyerTicker] || 0) : 0;
+        
+        // Usar el timestamp m├ís reciente para el lastUpdate de la fusi├│n
+        const lastUpdate = Math.max(targetTimestamp, buyerTimestamp, m.lastUpdate || 0);
+
+        // Preferir valores del targetTicker si se actualiz├│, de lo contrario usar el del buyerTicker
+        const sourceTicker = targetUpdated ? m.targetTicker : (m.buyerTicker as string);
+
         return {
           ...m,
-          currentPrice: newPrices[m.targetTicker],
-          effectiveOfferPrice: newEffectiveOfferPrices[m.targetTicker],
-          spread: newSpreads[m.targetTicker],
-          trend: newTrends[m.targetTicker]
+          currentPrice: newPrices[m.targetTicker] ?? m.currentPrice,
+          effectiveOfferPrice: newEffectiveOfferPrices[sourceTicker] ?? m.effectiveOfferPrice,
+          spread: newSpreads[sourceTicker] ?? m.spread,
+          trend: newTrends[sourceTicker] ?? m.trend,
+          lastUpdate
         };
       }
       return m;

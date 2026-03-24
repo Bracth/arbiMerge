@@ -21,6 +21,7 @@ SocketServer.init(httpServer);
 app.get('/api/mergers', async (req, res) => {
   try {
     const enrichedMergers = await MergerService.getEnrichedMergers();
+
     res.json(enrichedMergers);
   } catch (error) {
     console.error('[REST] Error al obtener fusiones:', error);

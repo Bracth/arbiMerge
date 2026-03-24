@@ -115,6 +115,7 @@ export class PriceEmitter {
       const merger = this.mergersCache.get(symbol);
       let spread: number | undefined;
       let trend: TrendType = TrendType.STABLE;
+      let effectiveOfferPrice: number | undefined;
 
       if (merger) {
         const targetPrice = symbol === merger.targetTicker ? data.price : (this.lastPrices[merger.targetTicker]?.price || 0);
@@ -123,6 +124,7 @@ export class PriceEmitter {
           : undefined;
         
         spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
+        effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
         
         // Intentamos recuperar el último spread para determinar el trend
         const oldSpread = this.lastSpreads.get(merger.targetTicker);
@@ -139,7 +141,8 @@ export class PriceEmitter {
         price: data.price,
         timestamp: data.timestamp,
         spread,
-        trend
+        trend,
+        effectiveOfferPrice
       };
     });
   }
@@ -215,6 +218,13 @@ export class PriceEmitter {
    */
   getLastPrice(symbol: string): number | undefined {
     return this.lastPrices[symbol]?.price;
+  }
+
+  /**
+   * Obtiene el último timestamp conocido de un símbolo.
+   */
+  getLastTimestamp(symbol: string): number | undefined {
+    return this.lastPrices[symbol]?.timestamp;
   }
 }
 
