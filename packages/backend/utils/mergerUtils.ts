@@ -1,4 +1,6 @@
 import { Merger, AcquisitionType } from '@prisma/client';
+import { TrendType } from '@arbimerge/shared';
+import SpreadCalculatorService from '../services/SpreadCalculatorService';
 
 /**
  * Checks if a merger is non-cash and has a public buyer ticker.
@@ -18,4 +20,20 @@ export function getTickersForMonitoring(mergers: Merger[]): string[] {
     }
     return symbols;
   });
+}
+
+/**
+ * Enriches a merger with real-time price, spread, effective offer price, and trend.
+ */
+export function enrichMerger(merger: Merger, targetPrice: number, buyerPrice?: number) {
+  const spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
+  const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
+
+  return {
+    ...merger,
+    currentPrice: targetPrice,
+    effectiveOfferPrice,
+    spread,
+    trend: TrendType.STABLE // POR DEFECTO EN LA CARGA INICIAL
+  };
 }

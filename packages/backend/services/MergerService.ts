@@ -1,41 +1,35 @@
-import prisma from '../db/client';
-import { MergerStatus } from '@prisma/client';
+import { TrendType } from '@arbimerge/shared';
+import MergerRepository from '../repositories/MergerRepository';
+import { enrichMerger } from '../utils/mergerUtils';
 
 export class MergerService {
-  /**
-   * Obtiene todas las fusiones que están en estado PENDING.
-   * Estas son las que nos interesan para el monitoreo en tiempo real.
-   */
   async getActiveMergers() {
-    return prisma.merger.findMany({
-      where: {
-        status: MergerStatus.PENDING,
-      },
-      orderBy: {
-        announcedDate: 'desc',
-      },
-    });
+    return MergerRepository.getActiveMergers();
   }
 
-  /**
-   * Obtiene todas las fusiones registradas.
-   */
   async getAllMergers() {
-    return prisma.merger.findMany({
-      orderBy: {
-        announcedDate: 'desc',
-      },
-    });
+    return MergerRepository.getAllMergers();
+  }
+
+  async getMergerByTicker(ticker: string) {
+    return MergerRepository.getMergerByTicker(ticker);
   }
 
   /**
-   * Obtiene una fusión por su ticker objetivo.
+   * Obtiene las fusiones enriquecidas con precios y cálculos en tiempo real.
+   * Útil para los endpoints REST.
    */
-  async getMergerByTicker(ticker: string) {
-    return prisma.merger.findUnique({
-      where: {
-        targetTicker: ticker,
-      },
+  async getEnrichedMergers() {
+    const mergers = await this.getActiveMergers();
+
+    // Importación dinámica para evitar dependencia circular
+    const { default: PriceEmitter } = await import('../sockets/PriceEmitter');
+
+    return mergers.map(merger => {
+      const targetPrice = PriceEmitter.getLastPrice(merger.targetTicker) || 0;
+      const buyerPrice = merger.buyerTicker ? PriceEmitter.getLastPrice(merger.buyerTicker) : undefined;
+
+      return enrichMerger(merger, targetPrice, buyerPrice);
     });
   }
 }

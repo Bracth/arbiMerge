@@ -8,7 +8,10 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@arbimerge/shared": ["../shared/src/index.ts"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]
