@@ -3,7 +3,9 @@ import assert from 'node:assert';
 import { AcquisitionType, Merger, MergerStatus } from '@prisma/client';
 import { 
   isPublicBuyerRequired, 
-  getTickersForMonitoring 
+  getTickersForMonitoring,
+  getMergerLastUpdate,
+  enrichMerger
 } from '../utils/mergerUtils.js';
 
 // Mock Merger object generator
@@ -94,4 +96,75 @@ test('mergerUtils - getTickersForMonitoring', () => {
     'MIXED_TGT', 'MIXED_BUY',
     'STOCK_NO_BUY_TGT'
   ]);
+});
+
+test('mergerUtils - getMergerLastUpdate', () => {
+  // Mock getLastTimestamp function
+  const timestamps: Record<string, number> = {
+    'TGT_ONLY': 1000,
+    'TGT_STOCK': 2000,
+    'BUY_STOCK': 3000,
+  };
+  const getLastTimestamp = (s: string) => timestamps[s];
+
+  // Case 1: CASH merger (only target)
+  const cashMerger = createMockMerger({
+    targetTicker: 'TGT_ONLY',
+    acquisitionType: AcquisitionType.CASH
+  });
+  assert.strictEqual(getMergerLastUpdate(cashMerger, { getLastTimestamp }), 1000);
+
+  // Case 2: STOCK merger (target + buyer)
+  const stockMerger = createMockMerger({
+    targetTicker: 'TGT_STOCK',
+    buyerTicker: 'BUY_STOCK',
+    acquisitionType: AcquisitionType.STOCK
+  });
+  // Math.max(2000, 3000) = 3000
+  assert.strictEqual(getMergerLastUpdate(stockMerger, { getLastTimestamp }), 3000);
+
+  // Case 3: STOCK merger, buyer more recent than target
+  const stockMerger2 = createMockMerger({
+    targetTicker: 'TGT_ONLY', // 1000
+    buyerTicker: 'BUY_STOCK', // 3000
+    acquisitionType: AcquisitionType.STOCK
+  });
+  assert.strictEqual(getMergerLastUpdate(stockMerger2, { getLastTimestamp }), 3000);
+
+  // Case 4: No timestamps found
+  const unknownMerger = createMockMerger({
+    targetTicker: 'UNKNOWN',
+    acquisitionType: AcquisitionType.CASH
+  });
+  assert.strictEqual(getMergerLastUpdate(unknownMerger, { getLastTimestamp }), undefined);
+});
+
+test('mergerUtils - enrichMerger', () => {
+  const merger = createMockMerger({
+    targetTicker: 'TGT',
+    buyerTicker: 'BUY',
+    acquisitionType: AcquisitionType.STOCK,
+    exchangeRatio: 0.5
+  });
+
+  const timestamps: Record<string, number> = {
+    'TGT': 1000,
+    'BUY': 2000,
+  };
+
+  const params = {
+    targetPrice: 100,
+    buyerPrice: 210,
+    getLastTimestamp: (s: string) => timestamps[s]
+  };
+
+  const enriched = enrichMerger(merger, params);
+
+  // Spread = ((offerValue - targetPrice) / targetPrice) * 100
+  // offerValue = 210 * 0.5 = 105
+  // spread = ((105 - 100) / 100) * 100 = 5%
+  assert.strictEqual(enriched.currentPrice, 100);
+  assert.strictEqual(enriched.effectiveOfferPrice, 105);
+  assert.strictEqual(enriched.spread, 5);
+  assert.strictEqual(enriched.lastUpdate, 2000); // Max(1000, 2000)
 });

@@ -1,6 +1,6 @@
 import { TrendType } from '@arbimerge/shared';
 import MergerRepository from '../repositories/MergerRepository';
-import { enrichMerger } from '../utils/mergerUtils';
+import { enrichMerger, getMergerLastUpdate } from '../utils/mergerUtils';
 
 export class MergerService {
   async getActiveMergers() {
@@ -29,7 +29,11 @@ export class MergerService {
       const targetPrice = PriceEmitter.getLastPrice(merger.targetTicker) || 0;
       const buyerPrice = merger.buyerTicker ? PriceEmitter.getLastPrice(merger.buyerTicker) : undefined;
 
-      return enrichMerger(merger, targetPrice, buyerPrice);
+      return enrichMerger(merger, {
+        targetPrice,
+        buyerPrice,
+        getLastTimestamp: (ticker) => PriceEmitter.getLastTimestamp(ticker)
+      });
     });
   }
 }
