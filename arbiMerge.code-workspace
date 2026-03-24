@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "."
+		},
+		{
+			"path": "../arbiMerge-agente-2"
 		}
 	],
 	"settings": {}
