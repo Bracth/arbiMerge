@@ -25,7 +25,7 @@ export function getTickersForMonitoring(mergers: Merger[]): string[] {
 /**
  * Enriches a merger with real-time price, spread, effective offer price, and trend.
  */
-export function enrichMerger(merger: Merger, targetPrice: number, buyerPrice?: number) {
+export function enrichMerger(merger: Merger, targetPrice: number, buyerPrice?: number, lastUpdate?: number) {
   const spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
   const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
 
@@ -34,6 +34,7 @@ export function enrichMerger(merger: Merger, targetPrice: number, buyerPrice?: n
     currentPrice: targetPrice,
     effectiveOfferPrice,
     spread,
-    trend: TrendType.STABLE // POR DEFECTO EN LA CARGA INICIAL
+    trend: TrendType.STABLE,
+    lastUpdate
   };
 }
