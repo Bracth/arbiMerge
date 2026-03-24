@@ -11,7 +11,7 @@ export class SocketServer {
   init(httpServer: HttpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: '*', // TODO En producción, deberíamos restringir esto
+        origin: '*', // TODO En producci├│n, deber├¡amos restringir esto
         methods: ['GET', 'POST'],
       },
     });
@@ -33,15 +33,22 @@ export class SocketServer {
   }
 
   /**
-   * Emite una actualización de precio a todos los clientes.
+   * Emite una actualizaci├│n de precio a todos los clientes.
    */
-  emitPriceUpdate(symbol: string, price: number, timestamp: number) {
+  emitPriceUpdate(symbol: string, price: number, timestamp: number, spread?: number, trend?: 'UP' | 'DOWN' | 'STABLE', effectiveOfferPrice?: number) {
     if (!this.io) {
       console.error('[SocketServer] Intento de emitir antes de inicializar.');
       return;
     }
 
-    this.io.emit('priceUpdate', { ticker: symbol, price, timestamp });
+    this.io.emit('priceUpdate', { 
+      ticker: symbol, 
+      price, 
+      timestamp,
+      spread,
+      trend,
+      effectiveOfferPrice
+    });
   }
 
   /**

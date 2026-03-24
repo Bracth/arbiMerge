@@ -1,15 +1,37 @@
+import { Merger, AcquisitionType } from '@prisma/client';
+
 export class SpreadCalculatorService {
   /**
-   * Calcula el spread porcentual de una fusión.
-   * Spread = ((Offer Price - Current Price) / Current Price) * 100
+   * Calcula el spread porcentual de una fusi├│n seg├║n su tipo de adquisici├│n.
    */
-  calculateSpread(offerPrice: number, currentPrice: number): number {
-    if (currentPrice <= 0) return 0;
-    
-    const spread = ((offerPrice - currentPrice) / currentPrice) * 100;
-    
+  calculateSpread(merger: Merger, targetPrice: number, buyerPrice?: number): number {
+    if (targetPrice <= 0) return 0;
+
+    const offerValue = this.calculateEffectiveOfferPrice(merger, buyerPrice);
+
+    if (offerValue === 0) return 0;
+
+    const spread = ((offerValue - targetPrice) / targetPrice) * 100;
+
     // Redondeamos a 2 decimales
     return Math.round(spread * 100) / 100;
+  }
+
+  /**
+   * Calcula el valor efectivo de la oferta (Effective Offer Price) seg├║n el tipo de adquisici├│n.
+   * Esto es lo que el accionista de la empresa objetivo recibir├¡a realmente.
+   */
+  public calculateEffectiveOfferPrice(merger: Merger, buyerPrice?: number): number {
+    switch (merger.acquisitionType) {
+      case AcquisitionType.CASH:
+        return merger.offerPrice;
+      case AcquisitionType.STOCK:
+        return (buyerPrice || 0) * (merger.exchangeRatio || 0);
+      case AcquisitionType.MIXED:
+        return ((buyerPrice || 0) * (merger.exchangeRatio || 0)) + (merger.cashAmount || 0);
+      default:
+        return merger.offerPrice;
+    }
   }
 
   /**

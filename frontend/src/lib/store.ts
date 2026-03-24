@@ -9,8 +9,8 @@ interface MergerState {
   lastUpdate: string | null;
   error: string | null;
   setMergers: (mergers: Merger[]) => void;
-  updateMergerPrice: (ticker: string, currentPrice: number, timestamp?: number) => void;
-  updateMultiplePrices: (prices: { symbol: string, price: number, timestamp?: number }[]) => void;
+  updateMergerPrice: (ticker: string, currentPrice: number, spread: number, trend: 'UP' | 'DOWN' | 'STABLE', effectiveOfferPrice: number, timestamp?: number) => void;
+  updateMultiplePrices: (prices: { symbol: string, price: number, spread: number, trend: 'UP' | 'DOWN' | 'STABLE', effectiveOfferPrice: number, timestamp?: number }[]) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
   setError: (error: string | null) => void;
 }
@@ -23,29 +23,15 @@ export const useMergerStore = create<MergerState>((set) => ({
   lastUpdate: null,
   error: null,
 
-  setMergers: (mergers) => set((state) => {
+  setMergers: (mergers) => set(() => {
     console.log('[Store] Setting mergers:', mergers.length);
     return {
-      mergers: mergers.map(m => {
-        // Si ya tenemos un precio m├ís reciente en el store (del WebSocket), lo usamos
-        const cachedPrice = state.prices[m.targetTicker];
-        const finalPrice = cachedPrice !== undefined ? cachedPrice : m.currentPrice;
-        
-        if (cachedPrice !== undefined) {
-          console.log(`[Store] Using cached price for ${m.targetTicker}: ${cachedPrice}`);
-        }
-
-        return {
-          ...m,
-          currentPrice: finalPrice,
-          spread: finalPrice > 0 ? ((m.offerPrice - finalPrice) / finalPrice) * 100 : 0
-        };
-      }),
+      mergers,
       lastUpdate: new Date().toISOString()
     };
   }),
 
-  updateMergerPrice: (ticker, currentPrice, timestamp) => set((state) => {
+  updateMergerPrice: (ticker, currentPrice, spread, trend, effectiveOfferPrice, timestamp) => set((state) => {
     const currentTimestamp = state.priceTimestamps[ticker] || 0;
     const updateTimestamp = timestamp || Date.now();
 
@@ -66,7 +52,9 @@ export const useMergerStore = create<MergerState>((set) => ({
           ? {
             ...m,
             currentPrice,
-            spread: currentPrice > 0 ? ((m.offerPrice - currentPrice) / currentPrice) * 100 : 0
+            effectiveOfferPrice,
+            spread,
+            trend
           }
           : m
       ),
@@ -82,6 +70,9 @@ export const useMergerStore = create<MergerState>((set) => ({
     console.log(`[Store] Received ${priceUpdates.length} initial prices`);
     const newPrices = { ...state.prices };
     const newTimestamps = { ...state.priceTimestamps };
+    const newSpreads: Record<string, number> = {};
+    const newTrends: Record<string, 'UP' | 'DOWN' | 'STABLE'> = {};
+    const newEffectiveOfferPrices: Record<string, number> = {};
     let anyUpdated = false;
 
     // Actualizar cach├® de precios y timestamps
@@ -92,6 +83,9 @@ export const useMergerStore = create<MergerState>((set) => ({
       if (updateTimestamp >= currentTimestamp) {
         newPrices[update.symbol] = update.price;
         newTimestamps[update.symbol] = updateTimestamp;
+        newSpreads[update.symbol] = update.spread;
+        newTrends[update.symbol] = update.trend;
+        newEffectiveOfferPrices[update.symbol] = update.effectiveOfferPrice;
         anyUpdated = true;
       }
     });
@@ -103,12 +97,13 @@ export const useMergerStore = create<MergerState>((set) => ({
 
     // Actualizar la lista de mergers si ya est├í cargada
     const updatedMergers = state.mergers.map((m) => {
-      const currentPrice = newPrices[m.targetTicker];
-      if (currentPrice !== undefined) {
+      if (newPrices[m.targetTicker] !== undefined) {
         return {
           ...m,
-          currentPrice,
-          spread: currentPrice > 0 ? ((m.offerPrice - currentPrice) / currentPrice) * 100 : 0
+          currentPrice: newPrices[m.targetTicker],
+          effectiveOfferPrice: newEffectiveOfferPrices[m.targetTicker],
+          spread: newSpreads[m.targetTicker],
+          trend: newTrends[m.targetTicker]
         };
       }
       return m;

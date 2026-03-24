@@ -27,7 +27,7 @@ async function bootstrap() {
 
     // 1. Obtenemos las fusiones activas para inicializar el caché
     const activeMergers = await MergerService.getActiveMergers();
-    const symbols = activeMergers.map(m => m.targetTicker);
+    const symbols = activeMergers.flatMap(m => [m.targetTicker, m.buyerTicker].filter(Boolean) as string[]);
 
     // 2. Inicializamos el caché de precios (REST API) con un timeout de 10 segundos
     const ac = new AbortController();

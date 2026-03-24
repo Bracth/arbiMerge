@@ -34,12 +34,15 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
     <div className="bg-surface-container-high p-8 flex flex-col justify-between group hover:bg-surface-bright transition-colors duration-300">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <Typography variant="h2">
               {merger.targetTicker}
             </Typography>
             <Badge variant="subtle" color="secondary">
               {merger.status.toUpperCase()}
+            </Badge>
+            <Badge variant="subtle" color="primary" className="text-[10px] px-1.5 py-0.5">
+              {merger.acquisitionType}
             </Badge>
           </div>
           <Typography variant="body" className="text-outline-variant text-sm font-medium uppercase">
@@ -78,25 +81,34 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
         </div>
         <div className="flex flex-col text-right">
           <Typography variant="label" className="mb-1">
-            OFFER PRICE
+            OFFER VALUE
           </Typography>
           <Typography variant="h2" tabular className="text-primary">
-            ${merger.offerPrice?.toFixed(2)}
+            ${merger.effectiveOfferPrice?.toFixed(2)}
           </Typography>
         </div>
       </div>
 
       <div className="pt-6">
         <div className="flex justify-between items-end">
-          <Typography variant="body" className="text-xs font-bold text-outline-variant uppercase">
-            NET SPREAD
-          </Typography>
+          <div className="flex flex-col">
+            <Typography variant="body" className="text-xs font-bold text-outline-variant uppercase">
+              NET SPREAD
+            </Typography>
+            {merger.acquisitionType !== 'CASH' && (
+              <Typography variant="body" className="text-[10px] text-outline-variant italic">
+                (Dynamic Deal)
+              </Typography>
+            )}
+          </div>
           <Typography
             variant="h1"
             tabular
             className={cn(
-              "font-extrabold tracking-tighter",
-              spreadColor
+              "font-extrabold tracking-tighter transition-colors duration-500",
+              spreadColor,
+              merger.trend === 'UP' && "flash-green-subtle",
+              merger.trend === 'DOWN' && "flash-red-subtle"
             )}
           >
             {merger.spread.toFixed(1)}%

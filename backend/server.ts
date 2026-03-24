@@ -4,6 +4,8 @@ import cors from 'cors';
 import 'dotenv/config';
 import MergerService from './services/MergerService';
 import SocketServer from './sockets/SocketServer';
+import PriceEmitter from './sockets/PriceEmitter';
+import SpreadCalculatorService from './services/SpreadCalculatorService';
 
 const app = express();
 const httpServer = createServer(app);
@@ -19,7 +21,24 @@ SocketServer.init(httpServer);
 app.get('/api/mergers', async (req, res) => {
   try {
     const mergers = await MergerService.getAllMergers();
-    res.json(mergers);
+    
+    const enrichedMergers = mergers.map(merger => {
+      const targetPrice = PriceEmitter.getLastPrice(merger.targetTicker) || 0;
+      const buyerPrice = merger.buyerTicker ? PriceEmitter.getLastPrice(merger.buyerTicker) : undefined;
+      
+      const spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
+      const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
+      
+      return {
+        ...merger,
+        currentPrice: targetPrice,
+        effectiveOfferPrice,
+        spread,
+        trend: 'STABLE' // Por defecto en la carga inicial
+      };
+    });
+
+    res.json(enrichedMergers);
   } catch (error) {
     console.error('[REST] Error al obtener fusiones:', error);
     res.status(500).json({ error: 'Error al obtener la lista de fusiones.' });

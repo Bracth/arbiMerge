@@ -40,10 +40,10 @@ export const useMergerWebSocket = () => {
     });
 
     socket.on('priceUpdate', (data: PriceUpdate) => {
-      updateMergerPrice(data.ticker, data.price, data.timestamp);
+      updateMergerPrice(data.ticker, data.price, data.spread, data.trend, data.effectiveOfferPrice, data.timestamp);
     });
 
-    socket.on('initialPrices', (data: { symbol: string, price: number, timestamp: number }[]) => {
+    socket.on('initialPrices', (data: { symbol: string, price: number, spread: number, trend: 'UP' | 'DOWN' | 'STABLE', effectiveOfferPrice: number, timestamp: number }[]) => {
       updateMultiplePrices(data);
     });
 

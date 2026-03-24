@@ -1,5 +1,5 @@
 // backend/prisma/seed.ts
-import { MergerStatus } from '@prisma/client';
+import { MergerStatus, AcquisitionType } from '@prisma/client';
 import prisma from './client.js';
 
 async function main() {
@@ -8,26 +8,44 @@ async function main() {
     // Array tipado con operaciones reales (o realistas) para que las APIs financieras las reconozcan
     const mergers = [
         {
-            targetTicker: 'TWO',
-            targetName: 'Two Harbors Investment',
-            buyerName: 'Annaly Capital Management',
-            buyerTicker: 'NLY',
-            offerPrice: 10.75,
+            targetTicker: 'CPRI',
+            targetName: 'Capri Holdings',
+            buyerName: 'Tapestry',
+            buyerTicker: 'TPR',
+            acquisitionType: AcquisitionType.CASH,
+            offerPrice: 57.0,
+            cashAmount: 57.0,
             currency: 'USD',
             status: MergerStatus.PENDING,
-            announcedDate: new Date('2026-03-21T00:00:00Z'),
-            expectedClosingDate: 'Q4 2026',
+            announcedDate: new Date('2023-08-10T00:00:00Z'),
+            expectedClosingDate: '2024',
         },
         {
-            targetTicker: 'PERF',
-            targetName: 'Perfect Corp.',
-            buyerName: 'CyberLink International Technology Corp.',
-            buyerTicker: 'TAI:5203',
-            offerPrice: 1.95,
+            targetTicker: 'VMW',
+            targetName: 'VMware',
+            buyerName: 'Broadcom',
+            buyerTicker: 'AVGO',
+            acquisitionType: AcquisitionType.STOCK,
+            offerPrice: 142.5, // Announced value (approx)
+            exchangeRatio: 0.252,
             currency: 'USD',
             status: MergerStatus.PENDING,
-            announcedDate: new Date('2026-03-17T00:00:00Z'),
-            expectedClosingDate: 'Q4 2026',
+            announcedDate: new Date('2022-05-26T00:00:00Z'),
+            expectedClosingDate: '2023',
+        },
+        {
+            targetTicker: 'ATVI',
+            targetName: 'Activision Blizzard',
+            buyerName: 'Microsoft',
+            buyerTicker: 'MSFT',
+            acquisitionType: AcquisitionType.MIXED,
+            offerPrice: 95.0,
+            cashAmount: 95.0,
+            exchangeRatio: 0.0, // Simplified for testing as per instructions
+            currency: 'USD',
+            status: MergerStatus.PENDING,
+            announcedDate: new Date('2022-01-18T00:00:00Z'),
+            expectedClosingDate: '2023',
         },
     ];
 
@@ -35,10 +53,10 @@ async function main() {
         // Usamos upsert para evitar errores si corremos el seed múltiples veces
         const merger = await prisma.merger.upsert({
             where: { targetTicker: deal.targetTicker },
-            update: {}, // Si ya existe, no hacemos nada (o podríamos actualizar los valores)
+            update: deal, // Si ya existe, actualizamos con los nuevos datos
             create: deal,
         });
-        console.log(`✅ Fusión registrada: ${merger.targetTicker} -> ${merger.buyerName}`);
+        console.log(`✅ Fusión registrada: ${merger.targetTicker} (${merger.acquisitionType}) -> ${merger.buyerName}`);
     }
 
     console.log('🎉 Seeding completado con éxito.');

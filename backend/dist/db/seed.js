@@ -1,6 +1,6 @@
-// backend/db/seed.ts
-import { MergerStatus } from '@prisma/client';
-import prisma from './client';
+// backend/prisma/seed.ts
+import { MergerStatus, AcquisitionType } from '@prisma/client';
+import prisma from './client.js';
 async function main() {
     console.log('🌱 Iniciando el seeding de la base de datos con TypeScript...');
     // Array tipado con operaciones reales (o realistas) para que las APIs financieras las reconozcan
@@ -10,54 +10,50 @@ async function main() {
             targetName: 'Capri Holdings',
             buyerName: 'Tapestry',
             buyerTicker: 'TPR',
-            offerPrice: 57.00,
+            acquisitionType: AcquisitionType.CASH,
+            offerPrice: 57.0,
+            cashAmount: 57.0,
             currency: 'USD',
             status: MergerStatus.PENDING,
             announcedDate: new Date('2023-08-10T00:00:00Z'),
-            expectedClosingDate: 'Q4 2026',
+            expectedClosingDate: '2024',
         },
         {
-            targetTicker: 'X',
-            targetName: 'United States Steel',
-            buyerName: 'Nippon Steel',
-            buyerTicker: null, // Nippon Steel cotiza en Japón, para el MVP ignoramos su ticker
-            offerPrice: 55.00,
+            targetTicker: 'VMW',
+            targetName: 'VMware',
+            buyerName: 'Broadcom',
+            buyerTicker: 'AVGO',
+            acquisitionType: AcquisitionType.STOCK,
+            offerPrice: 142.5, // Announced value (approx)
+            exchangeRatio: 0.252,
             currency: 'USD',
             status: MergerStatus.PENDING,
-            announcedDate: new Date('2023-12-18T00:00:00Z'),
-            expectedClosingDate: 'Q3 2026',
+            announcedDate: new Date('2022-05-26T00:00:00Z'),
+            expectedClosingDate: '2023',
         },
         {
-            targetTicker: 'SAVE',
-            targetName: 'Spirit Airlines',
-            buyerName: 'JetBlue',
-            buyerTicker: 'JBLU',
-            offerPrice: 33.50,
-            currency: 'USD',
-            status: MergerStatus.CANCELLED, // Para mostrar cómo se ve una operación cancelada en la UI
-            announcedDate: new Date('2022-07-28T00:00:00Z'),
-            expectedClosingDate: null,
-        },
-        {
-            targetTicker: 'M',
-            targetName: 'Macy\'s',
-            buyerName: 'Arkhouse Management',
-            buyerTicker: null,
-            offerPrice: 24.00,
+            targetTicker: 'ATVI',
+            targetName: 'Activision Blizzard',
+            buyerName: 'Microsoft',
+            buyerTicker: 'MSFT',
+            acquisitionType: AcquisitionType.MIXED,
+            offerPrice: 95.0,
+            cashAmount: 95.0,
+            exchangeRatio: 0.0, // Simplified for testing as per instructions
             currency: 'USD',
             status: MergerStatus.PENDING,
-            announcedDate: new Date('2024-03-03T00:00:00Z'),
-            expectedClosingDate: 'Q1 2027',
-        }
+            announcedDate: new Date('2022-01-18T00:00:00Z'),
+            expectedClosingDate: '2023',
+        },
     ];
     for (const deal of mergers) {
         // Usamos upsert para evitar errores si corremos el seed múltiples veces
         const merger = await prisma.merger.upsert({
             where: { targetTicker: deal.targetTicker },
-            update: {}, // Si ya existe, no hacemos nada (o podríamos actualizar los valores)
+            update: deal, // Si ya existe, actualizamos con los nuevos datos
             create: deal,
         });
-        console.log(`✅ Fusión registrada: ${merger.targetTicker} -> ${merger.buyerName}`);
+        console.log(`✅ Fusión registrada: ${merger.targetTicker} (${merger.acquisitionType}) -> ${merger.buyerName}`);
     }
     console.log('🎉 Seeding completado con éxito.');
 }

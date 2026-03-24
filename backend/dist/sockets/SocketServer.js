@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import PriceEmitter from './PriceEmitter';
 export class SocketServer {
     io = null;
     /**
@@ -7,12 +8,15 @@ export class SocketServer {
     init(httpServer) {
         this.io = new Server(httpServer, {
             cors: {
-                origin: '*', // TODO En producción, deberíamos restringir esto
+                origin: '*', // TODO En producci├│n, deber├¡amos restringir esto
                 methods: ['GET', 'POST'],
             },
         });
         this.io.on('connection', (socket) => {
             console.log(`[SocketServer] Nuevo cliente conectado: ${socket.id}`);
+            // Enviar precios actuales al nuevo cliente para que tenga datos de inmediato
+            const currentPrices = PriceEmitter.getAllLastPrices();
+            socket.emit('initialPrices', currentPrices);
             socket.on('disconnect', () => {
                 console.log(`[SocketServer] Cliente desconectado: ${socket.id}`);
             });
@@ -21,14 +25,21 @@ export class SocketServer {
         return this.io;
     }
     /**
-     * Emite una actualización de precio a todos los clientes.
+     * Emite una actualizaci├│n de precio a todos los clientes.
      */
-    emitPriceUpdate(ticker, price) {
+    emitPriceUpdate(symbol, price, timestamp, spread, trend, effectiveOfferPrice) {
         if (!this.io) {
             console.error('[SocketServer] Intento de emitir antes de inicializar.');
             return;
         }
-        this.io.emit('priceUpdate', { ticker, price });
+        this.io.emit('priceUpdate', {
+            ticker: symbol,
+            price,
+            timestamp,
+            spread,
+            trend,
+            effectiveOfferPrice
+        });
     }
     /**
      * Obtiene la instancia de Socket.io.

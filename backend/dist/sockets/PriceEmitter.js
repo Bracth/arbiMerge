@@ -1,17 +1,29 @@
 import MergerService from '../services/MergerService';
 import FinnhubService from '../services/FinnhubService';
 import SocketServer from './SocketServer';
+import SpreadCalculatorService from '../services/SpreadCalculatorService';
 export class PriceEmitter {
+    static instance;
     lastPrices = {};
     lastEmitted = {};
     activeTickers = new Set();
     THROTTLE_MS = 500;
     isRunning = false;
+    // Caché local para fusiones y spreads
+    mergersCache = new Map();
+    lastSpreads = new Map();
+    constructor() { }
+    static getInstance() {
+        if (!PriceEmitter.instance) {
+            PriceEmitter.instance = new PriceEmitter();
+        }
+        return PriceEmitter.instance;
+    }
     /**
      * Manejador para las actualizaciones de precio de Finnhub.
      */
-    onPriceUpdate = ({ symbol, price }) => {
-        this.handlePriceUpdate(symbol, price);
+    onPriceUpdate = ({ symbol, price, timestamp }) => {
+        this.handlePriceUpdate(symbol, price, timestamp);
     };
     /**
      * Inicia la escucha de precios en tiempo real.
@@ -25,13 +37,23 @@ export class PriceEmitter {
         try {
             // 1. Obtenemos las fusiones activas (PENDING)
             const activeMergers = await MergerService.getActiveMergers();
-            const tickers = activeMergers.map(m => m.targetTicker);
-            if (tickers.length === 0) {
+            // Poblamos el caché local
+            this.mergersCache.clear();
+            const tickersToSubscribe = new Set();
+            activeMergers.forEach(merger => {
+                this.mergersCache.set(merger.targetTicker, merger);
+                tickersToSubscribe.add(merger.targetTicker);
+                if (merger.buyerTicker) {
+                    this.mergersCache.set(merger.buyerTicker, merger);
+                    tickersToSubscribe.add(merger.buyerTicker);
+                }
+            });
+            if (tickersToSubscribe.size === 0) {
                 console.log('[PriceEmitter] No hay fusiones activas para monitorear.');
             }
             // 2. Nos suscribimos a cada ticker en Finnhub
             this.activeTickers.clear();
-            tickers.forEach(ticker => {
+            tickersToSubscribe.forEach(ticker => {
                 console.log(`[PriceEmitter] Suscribiéndose a ${ticker}`);
                 FinnhubService.subscribe(ticker);
                 this.activeTickers.add(ticker);
@@ -45,38 +67,113 @@ export class PriceEmitter {
         }
     }
     /**
+     * Inicializa el caché de precios con los últimos valores conocidos.
+     */
+    async initializeCache(symbols, abortSignal) {
+        console.log(`[PriceEmitter] Inicializando caché para ${symbols.length} símbolos...`);
+        for (const symbol of symbols) {
+            try {
+                const data = await FinnhubService.fetchInitialPrice(symbol, abortSignal);
+                if (data) {
+                    this.lastPrices[symbol] = { price: data.price, timestamp: data.timestamp };
+                    // Marcamos como emitido para evitar una emisión inmediata duplicada si llega un tick rápido
+                    this.lastEmitted[symbol] = Date.now();
+                    console.log(`[PriceEmitter] Caché inicializado para ${symbol}: ${data.price}`);
+                }
+                // Delay de 200ms para no saturar la API de Finnhub (Rate limiting)
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            catch (error) {
+                console.error(`[PriceEmitter] Error al inicializar caché para ${symbol}:`, error);
+            }
+        }
+        console.log('[PriceEmitter] Caché de precios inicializado.');
+    }
+    /**
+     * Obtiene todos los últimos precios almacenados con spread y trend pre-calculados.
+     */
+    getAllLastPrices() {
+        return Object.entries(this.lastPrices).map(([symbol, data]) => {
+            const merger = this.mergersCache.get(symbol);
+            let spread;
+            let trend = 'STABLE';
+            if (merger) {
+                const targetPrice = symbol === merger.targetTicker ? data.price : (this.lastPrices[merger.targetTicker]?.price || 0);
+                const buyerPrice = merger.buyerTicker
+                    ? (symbol === merger.buyerTicker ? data.price : (this.lastPrices[merger.buyerTicker]?.price || 0))
+                    : undefined;
+                spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
+                // Intentamos recuperar el último spread para determinar el trend
+                const oldSpread = this.lastSpreads.get(merger.targetTicker);
+                if (oldSpread !== undefined) {
+                    trend = SpreadCalculatorService.getTrend(spread, oldSpread);
+                }
+                // Actualizamos el caché de spreads
+                this.lastSpreads.set(merger.targetTicker, spread);
+            }
+            return {
+                symbol,
+                price: data.price,
+                timestamp: data.timestamp,
+                spread,
+                trend
+            };
+        });
+    }
+    /**
      * Detiene la escucha de precios.
      */
     stop() {
         if (!this.isRunning)
             return;
         console.log('[PriceEmitter] Deteniendo escucha de precios...');
-        // Unsubscribe from all active tickers
-        this.activeTickers.forEach(ticker => {
-            FinnhubService.unsubscribe(ticker);
-        });
-        this.activeTickers.clear();
+        FinnhubService.stop();
         FinnhubService.off('priceUpdate', this.onPriceUpdate);
         this.isRunning = false;
     }
     /**
      * Procesa una actualización de precio con lógica de throttle.
      */
-    handlePriceUpdate(ticker, price) {
+    handlePriceUpdate(symbol, price, timestamp) {
         const now = Date.now();
-        const lastEmit = this.lastEmitted[ticker] || 0;
-        // Throttle: solo emitimos si han pasado más de THROTTLE_MS
+        const lastEmit = this.lastEmitted[symbol] || 0;
+        // Actualizamos el precio en el caché siempre, para que los cálculos de spread sean precisos
+        this.lastPrices[symbol] = { price, timestamp };
+        // Throttle: solo emitimos si han pasado m├ís de THROTTLE_MS
         if (now - lastEmit >= this.THROTTLE_MS) {
-            this.lastPrices[ticker] = price;
-            this.lastEmitted[ticker] = now;
-            SocketServer.emitPriceUpdate(ticker, price);
+            this.lastEmitted[symbol] = now;
+            // Buscamos si este ticker pertenece a una fusi├│n
+            // IMPORTANTE: Un ticker puede ser target de una fusi├│n y buyer de otra (aunque raro en el MVP)
+            // O un buyer puede estar en m├║ltiples fusiones.
+            const activeMergers = Array.from(this.mergersCache.values());
+            const relevantMergers = activeMergers.filter(m => m.targetTicker === symbol || m.buyerTicker === symbol);
+            if (relevantMergers.length > 0) {
+                relevantMergers.forEach(merger => {
+                    // Calculamos el nuevo spread y el valor efectivo de la oferta
+                    const targetPrice = this.lastPrices[merger.targetTicker]?.price || 0;
+                    const buyerPrice = merger.buyerTicker ? (this.lastPrices[merger.buyerTicker]?.price || 0) : undefined;
+                    const newSpread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
+                    const oldSpread = this.lastSpreads.get(merger.targetTicker) ?? newSpread;
+                    const trend = SpreadCalculatorService.getTrend(newSpread, oldSpread);
+                    // El valor efectivo de la oferta (EOP) es lo que realmente importa para el usuario
+                    const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
+                    // Actualizamos el ├║ltimo spread conocido
+                    this.lastSpreads.set(merger.targetTicker, newSpread);
+                    // Emitimos SIEMPRE bajo el targetTicker para que el frontend sepa qu├® fusi├│n actualizar
+                    SocketServer.emitPriceUpdate(merger.targetTicker, targetPrice, timestamp, newSpread, trend, effectiveOfferPrice);
+                });
+            }
+            else {
+                // Si no es parte de una fusi├│n conocida (raro), emitimos solo el precio
+                SocketServer.emitPriceUpdate(symbol, price, timestamp);
+            }
         }
     }
     /**
-     * Obtiene el último precio conocido de un ticker.
+     * Obtiene el último precio conocido de un símbolo.
      */
-    getLastPrice(ticker) {
-        return this.lastPrices[ticker];
+    getLastPrice(symbol) {
+        return this.lastPrices[symbol]?.price;
     }
 }
-export default new PriceEmitter();
+export default PriceEmitter.getInstance();
