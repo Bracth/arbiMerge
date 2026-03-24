@@ -1,0 +1,12 @@
+{
+  "name": "arbimerge-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "backend": "npm run --workspace=@arbimerge/backend",
+    "frontend": "npm run --workspace=@arbimerge/frontend",
+    "shared": "npm run --workspace=@arbimerge/shared"
+  }
+}

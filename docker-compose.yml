@@ -18,7 +18,7 @@ services:
   # 2. EL BACKEND (Node.js + WebSockets)
   backend:
     build:
-      context: ./backend
+      context: ./packages/backend
       dockerfile: Dockerfile
     container_name: arbimerge-backend
     restart: unless-stopped
@@ -35,7 +35,7 @@ services:
   # 3. EL FRONTEND (React + Nginx)
   frontend:
     build:
-      context: ./frontend
+      context: ./packages/frontend
       dockerfile: Dockerfile
     container_name: arbimerge-frontend
     restart: unless-stopped
