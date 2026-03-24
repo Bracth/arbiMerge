@@ -25,17 +25,23 @@ app.get('/api/mergers', async (req, res) => {
     
     const enrichedMergers = mergers.map(merger => {
       const targetPrice = PriceEmitter.getLastPrice(merger.targetTicker) || 0;
+      const targetTimestamp = PriceEmitter.getLastTimestamp(merger.targetTicker);
       const buyerPrice = merger.buyerTicker ? PriceEmitter.getLastPrice(merger.buyerTicker) : undefined;
+      const buyerTimestamp = merger.buyerTicker ? PriceEmitter.getLastTimestamp(merger.buyerTicker) : undefined;
       
       const spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
       const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
+      
+      // El lastUpdate de la fusión es el más reciente entre el target y el buyer (si existe)
+      const lastUpdate = Math.max(targetTimestamp || 0, buyerTimestamp || 0) || undefined;
       
       return {
         ...merger,
         currentPrice: targetPrice,
         effectiveOfferPrice,
         spread,
-        trend: TrendType.STABLE // Por defecto en la carga inicial
+        trend: TrendType.STABLE, // Por defecto en la carga inicial
+        lastUpdate
       };
     });
 

@@ -90,7 +90,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
         </div>
       </div>
 
-      <div className="pt-6">
+      <div className="pt-6 border-t border-outline-variant/10">
         <div className="flex justify-between items-end">
           <div className="flex flex-col">
             <Typography variant="body" className="text-xs font-bold text-outline-variant uppercase">
@@ -102,18 +102,25 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               </Typography>
             )}
           </div>
-          <Typography
-            variant="h1"
-            tabular
-            className={cn(
-              "font-extrabold tracking-tighter transition-colors duration-500",
-              spreadColor,
-              merger.trend === TrendType.UP && "flash-green-subtle",
-              merger.trend === TrendType.DOWN && "flash-red-subtle"
+          <div className="flex flex-col items-end">
+            <Typography
+              variant="h1"
+              tabular
+              className={cn(
+                "font-extrabold tracking-tighter transition-colors duration-500",
+                spreadColor,
+                merger.trend === TrendType.UP && "flash-green-subtle",
+                merger.trend === TrendType.DOWN && "flash-red-subtle"
+              )}
+            >
+              {merger.spread.toFixed(1)}%
+            </Typography>
+            {merger.lastUpdate && (
+              <Typography variant="label" className="text-[9px] text-outline-variant/60 mt-1">
+                LAST UPDATED: {new Date(merger.lastUpdate).toLocaleTimeString()}
+              </Typography>
             )}
-          >
-            {merger.spread.toFixed(1)}%
-          </Typography>
+          </div>
         </div>
       </div>
     </div>

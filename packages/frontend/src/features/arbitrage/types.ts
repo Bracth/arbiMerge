@@ -18,6 +18,7 @@ export interface Merger {
   expectedClosingDate: string;
   spread: number;
   trend: TrendType;
+  lastUpdate?: number;
 }
 
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'error' | 'idle';
