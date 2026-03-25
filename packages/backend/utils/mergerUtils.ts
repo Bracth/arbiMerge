@@ -1,6 +1,6 @@
 import { Merger, AcquisitionType } from '@prisma/client';
 import { TrendType } from '@arbimerge/shared';
-import SpreadCalculatorService from '../services/SpreadCalculatorService';
+import SpreadCalculatorService from '../services/SpreadCalculatorService.js';
 
 /**
  * Checks if a merger is non-cash and has a public buyer ticker.

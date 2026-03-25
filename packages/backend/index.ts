@@ -1,8 +1,8 @@
 import 'dotenv/config';
-import { httpServer } from './server';
-import PriceEmitter from './sockets/PriceEmitter';
-import MergerService from './services/MergerService';
-import { getTickersForMonitoring } from './utils/mergerUtils';
+import { httpServer } from './server.js';
+import PriceEmitter from './sockets/PriceEmitter.js';
+import MergerService from './services/MergerService.js';
+import { getTickersForMonitoring } from './utils/mergerUtils.js';
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,7 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { TrendType } from '@arbimerge/shared';
-import PriceEmitter from './PriceEmitter';
+import PriceEmitter from './PriceEmitter.js';
 
 export class SocketServer {
   private io: Server | null = null;

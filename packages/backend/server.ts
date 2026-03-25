@@ -3,9 +3,9 @@ import { createServer } from 'http';
 import cors from 'cors';
 import 'dotenv/config';
 import { TrendType } from '@arbimerge/shared';
-import MergerService from './services/MergerService';
-import SocketServer from './sockets/SocketServer';
-import PriceEmitter from './sockets/PriceEmitter';
+import MergerService from './services/MergerService.js';
+import SocketServer from './sockets/SocketServer.js';
+import PriceEmitter from './sockets/PriceEmitter.js';
 
 const app = express();
 const httpServer = createServer(app);

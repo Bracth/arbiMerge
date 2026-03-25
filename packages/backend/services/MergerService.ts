@@ -1,6 +1,6 @@
 import { TrendType } from '@arbimerge/shared';
-import MergerRepository from '../repositories/MergerRepository';
-import { enrichMerger, getMergerLastUpdate } from '../utils/mergerUtils';
+import MergerRepository from '../repositories/MergerRepository.js';
+import { enrichMerger, getMergerLastUpdate } from '../utils/mergerUtils.js';
 
 export class MergerService {
   async getActiveMergers() {
@@ -23,7 +23,7 @@ export class MergerService {
     const mergers = await this.getActiveMergers();
 
     // Importación dinámica para evitar dependencia circular
-    const { default: PriceEmitter } = await import('../sockets/PriceEmitter');
+    const { default: PriceEmitter } = await import('../sockets/PriceEmitter.js');
 
     return mergers.map(merger => {
       const targetPrice = PriceEmitter.getLastPrice(merger.targetTicker) || 0;

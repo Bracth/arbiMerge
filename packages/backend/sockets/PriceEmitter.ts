@@ -1,7 +1,7 @@
-import MergerService from '../services/MergerService';
-import FinnhubService from '../services/FinnhubService';
-import SocketServer from './SocketServer';
-import SpreadCalculatorService from '../services/SpreadCalculatorService';
+import MergerService from '../services/MergerService.js';
+import FinnhubService from '../services/FinnhubService.js';
+import SocketServer from './SocketServer.js';
+import SpreadCalculatorService from '../services/SpreadCalculatorService.js';
 import { Merger } from '@prisma/client';
 import { TrendType } from '@arbimerge/shared';
 
