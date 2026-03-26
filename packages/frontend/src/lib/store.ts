@@ -7,11 +7,10 @@ interface MergerState {
   prices: Record<string, number>;
   priceTimestamps: Record<string, number>;
   connectionStatus: ConnectionStatus;
-  lastUpdate: string | null;
   error: string | null;
   setMergers: (mergers: Merger[]) => void;
-  updateMergerPrice: (ticker: string, currentPrice: number, spread: number, trend: TrendType, effectiveOfferPrice: number, timestamp?: number) => void;
-  updateMultiplePrices: (prices: { symbol: string, price: number, spread: number, trend: TrendType, effectiveOfferPrice: number, timestamp?: number }[]) => void;
+  updateMergerPrice: (ticker: string, currentPrice: number, spread: number, trend: TrendType, effectiveOfferPrice: number, lastTargetPriceUpdate: number | null, lastBuyerPriceUpdate: number | null) => void;
+  updateMultiplePrices: (prices: { symbol: string, price: number, spread: number, trend: TrendType, effectiveOfferPrice: number, lastTargetPriceUpdate: number | null, lastBuyerPriceUpdate: number | null }[]) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
   setError: (error: string | null) => void;
 }
@@ -21,24 +20,27 @@ export const useMergerStore = create<MergerState>((set) => ({
   prices: {},
   priceTimestamps: {},
   connectionStatus: 'idle',
-  lastUpdate: null,
   error: null,
 
   setMergers: (mergers) => set(() => {
     console.log('[Store] Setting mergers:', mergers.length);
     return {
-      mergers,
-      lastUpdate: new Date().toISOString()
+      mergers
     };
   }),
 
-  updateMergerPrice: (ticker, currentPrice, spread, trend, effectiveOfferPrice, timestamp) => set((state) => {
-    const currentTimestamp = state.priceTimestamps[ticker] || 0;
-    const updateTimestamp = timestamp || Date.now();
+  updateMergerPrice: (ticker, currentPrice, spread, trend, effectiveOfferPrice, lastTargetPriceUpdate, lastBuyerPriceUpdate) => set((state) => {
+    const merger = state.mergers.find(m => m.targetTicker === ticker);
+    
+    // Reject stale updates using individual timestamps
+    if (merger) {
+      const isStale = (lastTargetPriceUpdate !== null && merger.lastTargetPriceUpdate !== null && lastTargetPriceUpdate < merger.lastTargetPriceUpdate) ||
+                      (lastBuyerPriceUpdate !== null && merger.lastBuyerPriceUpdate !== null && lastBuyerPriceUpdate < merger.lastBuyerPriceUpdate);
 
-    if (updateTimestamp < currentTimestamp) {
-      console.log(`[Store] Skipping update for ${ticker}: stale timestamp`);
-      return state;
+      if (isStale) {
+        console.log(`[Store] Skipping update for ${ticker}: stale timestamp`);
+        return state;
+      }
     }
 
     console.log(`[Store] Updating price for ${ticker}: ${currentPrice}`);
@@ -56,15 +58,15 @@ export const useMergerStore = create<MergerState>((set) => ({
             effectiveOfferPrice,
             spread,
             trend,
-            lastUpdate: updateTimestamp
+            lastTargetPriceUpdate,
+            lastBuyerPriceUpdate
           }
           : m
       ),
       priceTimestamps: {
         ...state.priceTimestamps,
-        [ticker]: updateTimestamp
-      },
-      lastUpdate: new Date().toISOString()
+        [ticker]: lastTargetPriceUpdate || Date.now()
+      }
     };
   }),
 
@@ -75,13 +77,15 @@ export const useMergerStore = create<MergerState>((set) => ({
     const newSpreads: Record<string, number> = {};
     const newTrends: Record<string, TrendType> = {};
     const newEffectiveOfferPrices: Record<string, number> = {};
+    const newTargetTimestamps: Record<string, number | null> = {};
+    const newBuyerTimestamps: Record<string, number | null> = {};
     const symbolsActuallyUpdated = new Set<string>();
     let anyUpdated = false;
 
-    // Actualizar cach├® de precios y timestamps
+    // Actualizar caché de precios y timestamps
     priceUpdates.forEach(update => {
       const currentTimestamp = newTimestamps[update.symbol] || 0;
-      const updateTimestamp = update.timestamp || Date.now();
+      const updateTimestamp = update.lastTargetPriceUpdate || Date.now();
 
       if (updateTimestamp >= currentTimestamp) {
         newPrices[update.symbol] = update.price;
@@ -89,6 +93,8 @@ export const useMergerStore = create<MergerState>((set) => ({
         newSpreads[update.symbol] = update.spread;
         newTrends[update.symbol] = update.trend;
         newEffectiveOfferPrices[update.symbol] = update.effectiveOfferPrice;
+        newTargetTimestamps[update.symbol] = update.lastTargetPriceUpdate;
+        newBuyerTimestamps[update.symbol] = update.lastBuyerPriceUpdate;
         symbolsActuallyUpdated.add(update.symbol);
         anyUpdated = true;
       }
@@ -99,20 +105,25 @@ export const useMergerStore = create<MergerState>((set) => ({
       return state;
     }
 
-    // Actualizar la lista de mergers si ya est├í cargada
+    // Actualizar la lista de mergers si ya está cargada
     const updatedMergers = state.mergers.map((m) => {
       const targetUpdated = symbolsActuallyUpdated.has(m.targetTicker);
       const buyerUpdated = m.buyerTicker && symbolsActuallyUpdated.has(m.buyerTicker);
 
       if (targetUpdated || buyerUpdated) {
-        const targetTimestamp = newTimestamps[m.targetTicker] || 0;
-        const buyerTimestamp = m.buyerTicker ? (newTimestamps[m.buyerTicker] || 0) : 0;
-        
-        // Usar el timestamp m├ís reciente para el lastUpdate de la fusi├│n
-        const lastUpdate = Math.max(targetTimestamp, buyerTimestamp, m.lastUpdate || 0);
-
-        // Preferir valores del targetTicker si se actualiz├│, de lo contrario usar el del buyerTicker
+        // Preferir valores del targetTicker si se actualizó, de lo contrario usar el del buyerTicker
         const sourceTicker = targetUpdated ? m.targetTicker : (m.buyerTicker as string);
+        
+        const lastTargetPriceUpdate = newTargetTimestamps[sourceTicker] ?? m.lastTargetPriceUpdate;
+        const lastBuyerPriceUpdate = newBuyerTimestamps[sourceTicker] ?? m.lastBuyerPriceUpdate;
+
+        // Reject stale updates using individual timestamps
+        const isStale = (lastTargetPriceUpdate !== null && m.lastTargetPriceUpdate !== null && lastTargetPriceUpdate < m.lastTargetPriceUpdate) ||
+                        (lastBuyerPriceUpdate !== null && m.lastBuyerPriceUpdate !== null && lastBuyerPriceUpdate < m.lastBuyerPriceUpdate);
+
+        if (isStale) {
+          return m;
+        }
 
         return {
           ...m,
@@ -120,7 +131,8 @@ export const useMergerStore = create<MergerState>((set) => ({
           effectiveOfferPrice: newEffectiveOfferPrices[sourceTicker] ?? m.effectiveOfferPrice,
           spread: newSpreads[sourceTicker] ?? m.spread,
           trend: newTrends[sourceTicker] ?? m.trend,
-          lastUpdate
+          lastTargetPriceUpdate,
+          lastBuyerPriceUpdate
         };
       }
       return m;
@@ -131,8 +143,7 @@ export const useMergerStore = create<MergerState>((set) => ({
     return {
       mergers: updatedMergers,
       prices: newPrices,
-      priceTimestamps: newTimestamps,
-      lastUpdate: new Date().toISOString()
+      priceTimestamps: newTimestamps
     };
   }),
 

@@ -1,6 +1,6 @@
 import { TrendType } from '@arbimerge/shared';
 import MergerRepository from '../repositories/MergerRepository.js';
-import { enrichMerger, getMergerLastUpdate } from '../utils/mergerUtils.js';
+import { enrichMerger } from '../utils/mergerUtils.js';
 
 export class MergerService {
   async getActiveMergers() {

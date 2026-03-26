@@ -34,9 +34,18 @@ export class SocketServer {
   }
 
   /**
-   * Emite una actualizaci├│n de precio a todos los clientes.
+   * Emite una actualización de precio a todos los clientes.
    */
-  emitPriceUpdate(symbol: string, price: number, timestamp: number, spread?: number, trend?: TrendType, effectiveOfferPrice?: number) {
+  emitPriceUpdate(
+    symbol: string, 
+    price: number, 
+    timestamp: number, 
+    spread?: number, 
+    trend?: TrendType, 
+    effectiveOfferPrice?: number,
+    lastTargetPriceUpdate?: number,
+    lastBuyerPriceUpdate?: number
+  ) {
     if (!this.io) {
       console.error('[SocketServer] Intento de emitir antes de inicializar.');
       return;
@@ -48,7 +57,9 @@ export class SocketServer {
       timestamp,
       spread,
       trend,
-      effectiveOfferPrice
+      effectiveOfferPrice,
+      lastTargetPriceUpdate,
+      lastBuyerPriceUpdate
     });
   }
 

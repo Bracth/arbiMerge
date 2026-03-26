@@ -39,7 +39,12 @@ export function enrichMerger(merger: Merger, params: MergerEnrichmentParams) {
   
   const spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
   const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
-  const lastUpdate = getMergerLastUpdate(merger, { getLastTimestamp });
+  
+  // Use real-time timestamps if available, otherwise fallback to DB timestamps
+  const lastTargetPriceUpdate = getLastTimestamp(merger.targetTicker) || (merger.lastTargetPriceUpdate ? merger.lastTargetPriceUpdate.getTime() : null);
+  const lastBuyerPriceUpdate = (merger.buyerTicker && isPublicBuyerRequired(merger)) 
+    ? (getLastTimestamp(merger.buyerTicker) || (merger.lastBuyerPriceUpdate ? merger.lastBuyerPriceUpdate.getTime() : null))
+    : null;
 
   return {
     ...merger,
@@ -47,28 +52,7 @@ export function enrichMerger(merger: Merger, params: MergerEnrichmentParams) {
     effectiveOfferPrice,
     spread,
     trend: TrendType.STABLE,
-    lastUpdate
+    lastTargetPriceUpdate,
+    lastBuyerPriceUpdate
   };
-}
-
-/**
- * Calculates the last update timestamp for a merger by checking both target and buyer tickers.
- */
-export function getMergerLastUpdate(
-  merger: Merger, 
-  { getLastTimestamp }: { getLastTimestamp: (symbol: string) => number | undefined }
-): number | undefined {
-  const targetTimestamp = getLastTimestamp(merger.targetTicker);
-  let buyerTimestamp: number | undefined;
-  
-  if (isPublicBuyerRequired(merger)) {
-    buyerTimestamp = getLastTimestamp(merger.buyerTicker!);
-  }
-
-  if (targetTimestamp === undefined && buyerTimestamp === undefined) {
-    return undefined;
-  }
-
-  // We take the latest timestamp between the two
-  return Math.max(targetTimestamp || 0, buyerTimestamp || 0) || undefined;
 }

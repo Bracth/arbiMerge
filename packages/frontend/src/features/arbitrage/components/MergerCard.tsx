@@ -5,6 +5,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Typography } from '../../../components/ui/Typography';
 import { cn } from '../../../lib/utils';
 import { TrendType, AcquisitionType } from '@arbimerge/shared';
+import { useRelativeTime } from '../../../hooks/useRelativeTime';
 
 interface MergerCardProps {
   merger: Merger;
@@ -13,6 +14,9 @@ interface MergerCardProps {
 export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
   const [priceTrend, setPriceTrend] = useState<'up' | 'down' | null>(null);
   const prevPriceRef = useRef(merger.currentPrice);
+
+  const targetRelativeTime = useRelativeTime(merger.lastTargetPriceUpdate);
+  const buyerRelativeTime = useRelativeTime(merger.lastBuyerPriceUpdate);
 
   useEffect(() => {
     if (merger.currentPrice > prevPriceRef.current) {
@@ -115,12 +119,17 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
             >
               {merger.spread.toFixed(1)}%
             </Typography>
-            {merger.lastUpdate && (
-              <Typography variant="label" className="text-[9px] text-outline-variant/60 mt-1">
-                LAST UPDATED: {new Date(merger.lastUpdate).toLocaleTimeString()}
-              </Typography>
-            )}
           </div>
+        </div>
+        <div className="flex gap-2 mt-4 pt-4 border-t border-outline-variant/5">
+          <Badge variant="subtle" color="gray" className="text-[9px] py-0.5 px-1.5">
+            TARGET: {targetRelativeTime}
+          </Badge>
+          {merger.acquisitionType !== AcquisitionType.CASH && (
+            <Badge variant="subtle" color="gray" className="text-[9px] py-0.5 px-1.5">
+              BUYER: {buyerRelativeTime}
+            </Badge>
+          )}
         </div>
       </div>
     </div>

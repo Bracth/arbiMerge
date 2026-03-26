@@ -18,7 +18,8 @@ export interface Merger {
   expectedClosingDate: string;
   spread: number;
   trend: TrendType;
-  lastUpdate?: number;
+  lastTargetPriceUpdate: number | null;
+  lastBuyerPriceUpdate: number | null;
 }
 
 export type ConnectionStatus = 'connected' | 'reconnecting' | 'error' | 'idle';
@@ -30,4 +31,6 @@ export interface PriceUpdate {
   spread: number;
   trend: TrendType;
   effectiveOfferPrice: number;
+  lastTargetPriceUpdate: number | null;
+  lastBuyerPriceUpdate: number | null;
 }

@@ -2,6 +2,7 @@ import MergerService from '../services/MergerService.js';
 import FinnhubService from '../services/FinnhubService.js';
 import SocketServer from './SocketServer.js';
 import SpreadCalculatorService from '../services/SpreadCalculatorService.js';
+import MergerRepository from '../repositories/MergerRepository.js';
 import { Merger } from '@prisma/client';
 import { TrendType } from '@arbimerge/shared';
 
@@ -9,8 +10,10 @@ export class PriceEmitter {
   private static instance: PriceEmitter;
   private lastPrices: Record<string, { price: number; timestamp: number }> = {};
   private lastEmitted: Record<string, number> = {};
+  private lastDbUpdate: Record<string, number> = {};
   private activeTickers: Set<string> = new Set();
   private readonly THROTTLE_MS = 500;
+  private readonly DB_UPDATE_THROTTLE_MS = 10 * 60 * 1000; // 10 minutos
   private isRunning: boolean = false;
 
   // Caché local para fusiones y spreads
@@ -116,6 +119,8 @@ export class PriceEmitter {
       let spread: number | undefined;
       let trend: TrendType = TrendType.STABLE;
       let effectiveOfferPrice: number | undefined;
+      let lastTargetPriceUpdate: number | undefined;
+      let lastBuyerPriceUpdate: number | undefined;
 
       if (merger) {
         const targetPrice = symbol === merger.targetTicker ? data.price : (this.lastPrices[merger.targetTicker]?.price || 0);
@@ -134,6 +139,9 @@ export class PriceEmitter {
         
         // Actualizamos el caché de spreads
         this.lastSpreads.set(merger.targetTicker, spread);
+
+        lastTargetPriceUpdate = this.lastPrices[merger.targetTicker]?.timestamp;
+        lastBuyerPriceUpdate = merger.buyerTicker ? this.lastPrices[merger.buyerTicker]?.timestamp : undefined;
       }
 
       return {
@@ -142,7 +150,9 @@ export class PriceEmitter {
         timestamp: data.timestamp,
         spread,
         trend,
-        effectiveOfferPrice
+        effectiveOfferPrice,
+        lastTargetPriceUpdate,
+        lastBuyerPriceUpdate
       };
     });
   }
@@ -193,22 +203,57 @@ export class PriceEmitter {
           // El valor efectivo de la oferta (EOP) es lo que realmente importa para el usuario
           const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
 
-          // Actualizamos el ├║ltimo spread conocido
+          // Actualizamos el último spread conocido
           this.lastSpreads.set(merger.targetTicker, newSpread);
 
-          // Emitimos SIEMPRE bajo el targetTicker para que el frontend sepa qu├® fusi├│n actualizar
+          // Emitimos SIEMPRE bajo el targetTicker para que el frontend sepa qué fusión actualizar
           SocketServer.emitPriceUpdate(
             merger.targetTicker, 
             targetPrice, 
             timestamp, 
             newSpread, 
             trend,
-            effectiveOfferPrice
+            effectiveOfferPrice,
+            this.lastPrices[merger.targetTicker]?.timestamp,
+            merger.buyerTicker ? this.lastPrices[merger.buyerTicker]?.timestamp : undefined
           );
+
+          // Intentamos actualizar la base de datos con throttle
+          this.maybeUpdateDbTimestamps(merger);
         });
       } else {
-        // Si no es parte de una fusi├│n conocida (raro), emitimos solo el precio
+        // Si no es parte de una fusión conocida (raro), emitimos solo el precio
         SocketServer.emitPriceUpdate(symbol, price, timestamp);
+      }
+    }
+  }
+
+  /**
+   * Actualiza los timestamps en la base de datos con un throttle de 10 minutos.
+   */
+  private async maybeUpdateDbTimestamps(merger: Merger) {
+    const now = Date.now();
+    const lastUpdate = this.lastDbUpdate[merger.targetTicker] || 0;
+
+    if (now - lastUpdate >= this.DB_UPDATE_THROTTLE_MS) {
+      this.lastDbUpdate[merger.targetTicker] = now;
+
+      const targetTimestamp = this.lastPrices[merger.targetTicker]?.timestamp 
+        ? new Date(this.lastPrices[merger.targetTicker].timestamp) 
+        : undefined;
+      
+      const buyerTimestamp = merger.buyerTicker && this.lastPrices[merger.buyerTicker]?.timestamp
+        ? new Date(this.lastPrices[merger.buyerTicker].timestamp)
+        : undefined;
+
+      try {
+        await MergerRepository.updatePriceTimestamps(
+          merger.targetTicker, 
+          targetTimestamp, 
+          buyerTimestamp
+        );
+      } catch (error) {
+        console.error(`[PriceEmitter] Error al actualizar timestamps en DB para ${merger.targetTicker}:`, error);
       }
     }
   }

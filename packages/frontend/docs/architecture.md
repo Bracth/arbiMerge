@@ -17,9 +17,10 @@ We use Zustand for global state management. The store is located in `src/lib/sto
 
 ### `useMergerStore`
 - **State**:
-  - `mergers`: Array of active merger arbitrage opportunities.
+  - `mergers`: Array of active merger arbitrage opportunities. Each `Merger` object contains:
+    - `lastTargetPriceUpdate`: Timestamp of the last price update for the target company.
+    - `lastBuyerPriceUpdate`: Timestamp of the last price update for the buyer company.
   - `connectionStatus`: Real-time connection state (`connected`, `reconnecting`, `error`, `idle`).
-  - `lastUpdate`: Timestamp of the last price update.
   - `error`: Global error state.
 - **Actions**:
   - `setMergers`: Initialize the merger list.

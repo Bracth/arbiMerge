@@ -24,7 +24,9 @@ const dummyMergers: Merger[] = [
     announcedDate: '2023-08-10',
     expectedClosingDate: '2024-12-31',
     spread: 67.0,
-    trend: TrendType.STABLE
+    trend: TrendType.STABLE,
+    lastTargetPriceUpdate: null,
+    lastBuyerPriceUpdate: null
   },
   {
     id: '2',
@@ -40,7 +42,9 @@ const dummyMergers: Merger[] = [
     announcedDate: '2022-07-28',
     expectedClosingDate: '2024-06-30',
     spread: 103.6,
-    trend: TrendType.STABLE
+    trend: TrendType.STABLE,
+    lastTargetPriceUpdate: null,
+    lastBuyerPriceUpdate: null
   },
   {
     id: '3',
@@ -56,7 +60,9 @@ const dummyMergers: Merger[] = [
     announcedDate: '2023-12-18',
     expectedClosingDate: '2024-09-30',
     spread: 18.9,
-    trend: TrendType.STABLE
+    trend: TrendType.STABLE,
+    lastTargetPriceUpdate: null,
+    lastBuyerPriceUpdate: null
   },
   {
     id: '4',
@@ -72,7 +78,9 @@ const dummyMergers: Merger[] = [
     announcedDate: '2023-10-23',
     expectedClosingDate: '2024-10-31',
     spread: 14.8,
-    trend: TrendType.STABLE
+    trend: TrendType.STABLE,
+    lastTargetPriceUpdate: null,
+    lastBuyerPriceUpdate: null
   },
   {
     id: '5',
@@ -88,7 +96,9 @@ const dummyMergers: Merger[] = [
     announcedDate: '2024-05-29',
     expectedClosingDate: '2024-12-31',
     spread: 7.4,
-    trend: TrendType.STABLE
+    trend: TrendType.STABLE,
+    lastTargetPriceUpdate: null,
+    lastBuyerPriceUpdate: null
   },
   {
     id: '6',
@@ -104,7 +114,9 @@ const dummyMergers: Merger[] = [
     announcedDate: '2024-01-15',
     expectedClosingDate: '2024-08-31',
     spread: 4.8,
-    trend: TrendType.STABLE
+    trend: TrendType.STABLE,
+    lastTargetPriceUpdate: null,
+    lastBuyerPriceUpdate: null
   }
 ];
 

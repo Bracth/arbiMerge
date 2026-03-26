@@ -4,7 +4,6 @@ import { AcquisitionType, Merger, MergerStatus } from '@prisma/client';
 import { 
   isPublicBuyerRequired, 
   getTickersForMonitoring,
-  getMergerLastUpdate,
   enrichMerger
 } from '../utils/mergerUtils.js';
 
@@ -23,6 +22,8 @@ const createMockMerger = (overrides: Partial<Merger> = {}): Merger => ({
   status: MergerStatus.PENDING,
   announcedDate: new Date(),
   expectedClosingDate: 'Q4 2026',
+  lastTargetPriceUpdate: null,
+  lastBuyerPriceUpdate: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
@@ -98,53 +99,14 @@ test('mergerUtils - getTickersForMonitoring', () => {
   ]);
 });
 
-test('mergerUtils - getMergerLastUpdate', () => {
-  // Mock getLastTimestamp function
-  const timestamps: Record<string, number> = {
-    'TGT_ONLY': 1000,
-    'TGT_STOCK': 2000,
-    'BUY_STOCK': 3000,
-  };
-  const getLastTimestamp = (s: string) => timestamps[s];
-
-  // Case 1: CASH merger (only target)
-  const cashMerger = createMockMerger({
-    targetTicker: 'TGT_ONLY',
-    acquisitionType: AcquisitionType.CASH
-  });
-  assert.strictEqual(getMergerLastUpdate(cashMerger, { getLastTimestamp }), 1000);
-
-  // Case 2: STOCK merger (target + buyer)
-  const stockMerger = createMockMerger({
-    targetTicker: 'TGT_STOCK',
-    buyerTicker: 'BUY_STOCK',
-    acquisitionType: AcquisitionType.STOCK
-  });
-  // Math.max(2000, 3000) = 3000
-  assert.strictEqual(getMergerLastUpdate(stockMerger, { getLastTimestamp }), 3000);
-
-  // Case 3: STOCK merger, buyer more recent than target
-  const stockMerger2 = createMockMerger({
-    targetTicker: 'TGT_ONLY', // 1000
-    buyerTicker: 'BUY_STOCK', // 3000
-    acquisitionType: AcquisitionType.STOCK
-  });
-  assert.strictEqual(getMergerLastUpdate(stockMerger2, { getLastTimestamp }), 3000);
-
-  // Case 4: No timestamps found
-  const unknownMerger = createMockMerger({
-    targetTicker: 'UNKNOWN',
-    acquisitionType: AcquisitionType.CASH
-  });
-  assert.strictEqual(getMergerLastUpdate(unknownMerger, { getLastTimestamp }), undefined);
-});
-
 test('mergerUtils - enrichMerger', () => {
   const merger = createMockMerger({
     targetTicker: 'TGT',
     buyerTicker: 'BUY',
     acquisitionType: AcquisitionType.STOCK,
-    exchangeRatio: 0.5
+    exchangeRatio: 0.5,
+    lastTargetPriceUpdate: new Date(500),
+    lastBuyerPriceUpdate: new Date(600)
   });
 
   const timestamps: Record<string, number> = {
@@ -166,5 +128,29 @@ test('mergerUtils - enrichMerger', () => {
   assert.strictEqual(enriched.currentPrice, 100);
   assert.strictEqual(enriched.effectiveOfferPrice, 105);
   assert.strictEqual(enriched.spread, 5);
-  assert.strictEqual(enriched.lastUpdate, 2000); // Max(1000, 2000)
+  assert.strictEqual(enriched.lastTargetPriceUpdate, 1000);
+  assert.strictEqual(enriched.lastBuyerPriceUpdate, 2000);
+  assert.strictEqual((enriched as any).lastUpdate, undefined);
+});
+
+test('mergerUtils - enrichMerger with fallback to DB timestamps', () => {
+  const merger = createMockMerger({
+    targetTicker: 'TGT',
+    buyerTicker: 'BUY',
+    acquisitionType: AcquisitionType.STOCK,
+    exchangeRatio: 0.5,
+    lastTargetPriceUpdate: new Date(500),
+    lastBuyerPriceUpdate: new Date(600)
+  });
+
+  const params = {
+    targetPrice: 100,
+    buyerPrice: 210,
+    getLastTimestamp: (s: string) => undefined
+  };
+
+  const enriched = enrichMerger(merger, params);
+
+  assert.strictEqual(enriched.lastTargetPriceUpdate, 500);
+  assert.strictEqual(enriched.lastBuyerPriceUpdate, 600);
 });

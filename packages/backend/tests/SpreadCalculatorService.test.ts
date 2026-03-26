@@ -19,6 +19,8 @@ const createMockMerger = (overrides: Partial<Merger> = {}): Merger => ({
   status: MergerStatus.PENDING,
   announcedDate: new Date(),
   expectedClosingDate: 'Q4 2026',
+  lastTargetPriceUpdate: null,
+  lastBuyerPriceUpdate: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,

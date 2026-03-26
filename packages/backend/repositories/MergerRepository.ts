@@ -38,6 +38,22 @@ export class MergerRepository {
       },
     });
   }
+
+  /**
+   * Actualiza los timestamps de los últimos precios recibidos para una fusión.
+   */
+  async updatePriceTimestamps(targetTicker: string, targetTimestamp?: Date, buyerTimestamp?: Date) {
+    const data: any = {};
+    if (targetTimestamp) data.lastTargetPriceUpdate = targetTimestamp;
+    if (buyerTimestamp) data.lastBuyerPriceUpdate = buyerTimestamp;
+
+    if (Object.keys(data).length === 0) return;
+
+    return prisma.merger.update({
+      where: { targetTicker },
+      data,
+    });
+  }
 }
 
 export default new MergerRepository();
