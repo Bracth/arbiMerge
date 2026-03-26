@@ -53,6 +53,10 @@
   --animate-scroll: scroll 30s linear infinite;
   --animate-flash-green: flashGreen 1.5s ease-out;
   --animate-flash-red: flashRed 1.5s ease-out;
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-fade-out: fadeOut 0.15s ease-in;
+  --animate-zoom-in: zoomIn 0.2s ease-out;
+  --animate-zoom-out: zoomOut 0.15s ease-in;
 }
 
 @layer base {
@@ -121,4 +125,24 @@
     color: inherit;
     text-shadow: none;
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes zoomOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
 }
