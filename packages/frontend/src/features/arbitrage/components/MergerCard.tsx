@@ -15,8 +15,6 @@ interface MergerCardProps {
 }
 
 export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
-  // const [priceTrend, setPriceTrend] = useState<'up' | 'down' | null>(null);
-  // const prevPriceRef = useRef(merger.currentPrice);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [targetPriceTrend, setTargetPriceTrend] = useState<'up' | 'down' | null>(null);
   const [buyerPriceTrend, setBuyerPriceTrend] = useState<'up' | 'down' | null>(null);
