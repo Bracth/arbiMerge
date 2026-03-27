@@ -1,55 +1,48 @@
-# Build stage
-# Using node:22-slim (Debian-based) to satisfy rolldown version requirements
-# and provide better compatibility for native bindings.
-FROM node:22-slim AS builder
-
-# Install build tools for native modules
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3 \
-    && rm -rf /var/lib/apt/lists/*
-
+# Stage 1: Build (Usamos Node solo para compilar)
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy root package files
+# Copiamos los archivos de configuración del monorepo
 COPY package.json package-lock.json ./
-
-# Remove lockfile to force re-resolution of platform-specific bindings
-# (The current lockfile is missing linux-specific native bindings for rolldown)
-RUN rm package-lock.json
-
-# Copy workspace package files for dependency installation
+COPY packages/backend/package.json packages/backend/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/frontend/package.json packages/frontend/package.json
-COPY packages/backend/package.json packages/backend/package.json
 
-# Install all dependencies
-RUN npm install
+# Instalamos todas las dependencias
+RUN npm ci
 
-# Copy source code and configurations
+# Copiamos el código fuente necesario
 COPY packages/shared packages/shared
 COPY packages/frontend packages/frontend
 
-# Build shared package (dependency for frontend)
+# Compilamos el paquete compartido (asumiendo que tu frontend usa tipos compartidos)
 RUN npm run build -w packages/shared
 
-# Build frontend package
+# IMPORTANTE: Si tu frontend necesita variables de entorno en tiempo de compilación (ej. VITE_WS_URL), 
+# descomenta estas líneas y pásalas desde Dokploy. Para el MVP, si el frontend detecta la URL dinámicamente, lo dejas así.
+# ARG VITE_WS_URL
+# ENV VITE_WS_URL=$VITE_WS_URL
+
+# Compilamos el proyecto de React/Vite
 RUN npm run build -w packages/frontend
 
-# Production stage
-FROM nginx:stable-alpine
+# Stage 2: Production Server (Usamos Nginx para servir los archivos estáticos)
+FROM nginx:alpine AS runner
 
-# Copy static assets from build stage
+# Limpiamos el HTML por defecto que trae Nginx
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copiamos los archivos estáticos generados por Vite en el Stage 1 a la carpeta pública de Nginx
 COPY --from=builder /app/packages/frontend/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY packages/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+# IMPORTANTE: Configuración genérica de Nginx para SPA (Single Page Applications).
+# Si usas React Router, Nginx necesita redirigir los 404 al index.html.
+# Como es una hackathon y queremos evitar crear un archivo nginx.conf extra, 
+# metemos el comando directamente aquí:
+RUN sed -i '10i \        try_files $uri $uri/ /index.html;' /etc/nginx/conf.d/default.conf
 
-# Expose port 80
+# Exponemos el puerto 80 (El que Dokploy / Traefik está esperando)
 EXPOSE 80
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
-
+# Comando para iniciar Nginx y mantenerlo corriendo en primer plano
 CMD ["nginx", "-g", "daemon off;"]

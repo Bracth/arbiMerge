@@ -10,12 +10,10 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: rootpassword
       POSTGRES_DB: arbimerge_db
-    ports:
-      - "5432:5432" # Expone el puerto para que Prisma Studio o pgAdmin puedan conectarse desde tu PC
     volumes:
-      - pgdata:/var/lib/postgresql/data # Persistencia: si el contenedor se cae, no pierdes los datos
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d arbimerge_db"]
+      test: [ "CMD-SHELL", "pg_isready -U root -d arbimerge_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,14 +29,13 @@ services:
       db:
         condition: service_healthy
     environment:
-      # ¡IMPORTANTE! Nota que usa "db" (el nombre del servicio de arriba) en lugar de "localhost"
       DATABASE_URL: "postgresql://root:rootpassword@db:5432/arbimerge_db?schema=public"
       PORT: 3000
-      # POLYGON_API_KEY: tu_api_key_aqui
-    ports:
-      - "3000:3000"
+    # QUITAMOS "ports". Dokploy se encargará de enrutar el dominio a este contenedor
+    expose:
+      - "3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -52,8 +49,9 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "80:80" # El puerto web por defecto. Accederás a la app en http://localhost
+    # QUITAMOS "ports: 80:80". Nginx expone el 80 internamente por defecto.
+    expose:
+      - "80"
 
 volumes:
   pgdata:
