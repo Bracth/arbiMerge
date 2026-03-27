@@ -53,7 +53,7 @@ app.get('/api/mergers/:id/analyze/stream', async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
       Analyze the following merger and acquisition deal:
@@ -65,7 +65,7 @@ app.get('/api/mergers/:id/analyze/stream', async (req, res) => {
       Expected Closing: ${merger.expectedClosingDate || 'N/A'}
 
       Provide a concise summary of the deal, potential risks, and strategic rationale.
-      Your response MUST be under 250 characters. Keep it professional and focused on arbitrage considerations.
+      Your response MUST be under 750 characters. Keep it professional and focused on arbitrage considerations.
     `;
 
     const result = await model.generateContentStream(prompt);
