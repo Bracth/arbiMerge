@@ -62,10 +62,10 @@ test('SpreadCalculatorService - MIXED', () => {
 test('SpreadCalculatorService - Edge Cases', () => {
   const merger = createMockMerger();
   
-  // currentPrice = 0
+  // targetPrice = 0
   assert.strictEqual(calculator.calculateSpread(merger, 0), 0);
   
-  // currentPrice < 0
+  // targetPrice < 0
   assert.strictEqual(calculator.calculateSpread(merger, -10), 0);
   
   // exchangeRatio = 0

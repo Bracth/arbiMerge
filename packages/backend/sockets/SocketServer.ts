@@ -38,7 +38,8 @@ export class SocketServer {
    */
   emitPriceUpdate(
     symbol: string, 
-    price: number, 
+    targetPrice: number, 
+    buyerPrice: number | null = null,
     timestamp: number, 
     spread?: number, 
     trend?: TrendType, 
@@ -53,7 +54,8 @@ export class SocketServer {
 
     this.io.emit('priceUpdate', { 
       ticker: symbol, 
-      price, 
+      targetPrice, 
+      buyerPrice,
       timestamp,
       spread,
       trend,

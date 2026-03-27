@@ -11,7 +11,8 @@ export interface Merger {
   cashAmount?: number;
   exchangeRatio?: number;
   effectiveOfferPrice: number;
-  currentPrice: number;
+  targetPrice: number;
+  buyerPrice: number | null;
   currency: string;
   status: MergerStatus;
   announcedDate: string;
@@ -26,7 +27,8 @@ export type ConnectionStatus = 'connected' | 'reconnecting' | 'error' | 'idle';
 
 export interface PriceUpdate {
   ticker: string;
-  price: number;
+  targetPrice: number;
+  buyerPrice: number | null;
   timestamp: number;
   spread: number;
   trend: TrendType;
