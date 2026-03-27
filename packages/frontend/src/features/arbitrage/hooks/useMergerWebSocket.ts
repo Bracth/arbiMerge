@@ -41,10 +41,28 @@ export const useMergerWebSocket = () => {
     });
 
     socket.on('priceUpdate', (data: PriceUpdate) => {
-      updateMergerPrice(data.ticker, data.price, data.spread, data.trend, data.effectiveOfferPrice, data.lastTargetPriceUpdate, data.lastBuyerPriceUpdate);
+      updateMergerPrice(
+        data.ticker, 
+        data.targetPrice, 
+        data.buyerPrice, 
+        data.spread, 
+        data.trend, 
+        data.effectiveOfferPrice, 
+        data.lastTargetPriceUpdate, 
+        data.lastBuyerPriceUpdate
+      );
     });
 
-    socket.on('initialPrices', (data: { symbol: string, price: number, spread: number, trend: TrendType, effectiveOfferPrice: number, lastTargetPriceUpdate: number | null, lastBuyerPriceUpdate: number | null }[]) => {
+    socket.on('initialPrices', (data: { 
+      symbol: string, 
+      targetPrice: number, 
+      buyerPrice: number | null, 
+      spread: number, 
+      trend: TrendType, 
+      effectiveOfferPrice: number, 
+      lastTargetPriceUpdate: number | null, 
+      lastBuyerPriceUpdate: number | null 
+    }[]) => {
       updateMultiplePrices(data);
     });
 

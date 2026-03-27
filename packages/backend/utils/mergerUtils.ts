@@ -48,7 +48,8 @@ export function enrichMerger(merger: Merger, params: MergerEnrichmentParams) {
 
   return {
     ...merger,
-    currentPrice: targetPrice,
+    targetPrice,
+    buyerPrice,
     effectiveOfferPrice,
     spread,
     trend: TrendType.STABLE,

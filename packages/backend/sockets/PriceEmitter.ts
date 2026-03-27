@@ -121,15 +121,19 @@ export class PriceEmitter {
       let effectiveOfferPrice: number | undefined;
       let lastTargetPriceUpdate: number | undefined;
       let lastBuyerPriceUpdate: number | undefined;
+      let targetPrice: number = data.price;
+      let buyerPrice: number | null = null;
 
       if (merger) {
-        const targetPrice = symbol === merger.targetTicker ? data.price : (this.lastPrices[merger.targetTicker]?.price || 0);
-        const buyerPrice = merger.buyerTicker 
+        targetPrice = symbol === merger.targetTicker ? data.price : (this.lastPrices[merger.targetTicker]?.price || 0);
+        const currentBuyerPrice = merger.buyerTicker 
           ? (symbol === merger.buyerTicker ? data.price : (this.lastPrices[merger.buyerTicker]?.price || 0))
           : undefined;
         
-        spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
-        effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
+        buyerPrice = currentBuyerPrice ?? null;
+        
+        spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice ?? undefined);
+        effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice ?? undefined);
         
         // Intentamos recuperar el último spread para determinar el trend
         const oldSpread = this.lastSpreads.get(merger.targetTicker);
@@ -146,7 +150,8 @@ export class PriceEmitter {
 
       return {
         symbol,
-        price: data.price,
+        targetPrice,
+        buyerPrice,
         timestamp: data.timestamp,
         spread,
         trend,
@@ -210,6 +215,7 @@ export class PriceEmitter {
           SocketServer.emitPriceUpdate(
             merger.targetTicker, 
             targetPrice, 
+            buyerPrice ?? null,
             timestamp, 
             newSpread, 
             trend,
@@ -223,7 +229,7 @@ export class PriceEmitter {
         });
       } else {
         // Si no es parte de una fusión conocida (raro), emitimos solo el precio
-        SocketServer.emitPriceUpdate(symbol, price, timestamp);
+        SocketServer.emitPriceUpdate(symbol, price, null, timestamp);
       }
     }
   }

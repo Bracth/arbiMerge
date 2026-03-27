@@ -125,7 +125,8 @@ test('mergerUtils - enrichMerger', () => {
   // Spread = ((offerValue - targetPrice) / targetPrice) * 100
   // offerValue = 210 * 0.5 = 105
   // spread = ((105 - 100) / 100) * 100 = 5%
-  assert.strictEqual(enriched.currentPrice, 100);
+  assert.strictEqual(enriched.targetPrice, 100);
+  assert.strictEqual(enriched.buyerPrice, 210);
   assert.strictEqual(enriched.effectiveOfferPrice, 105);
   assert.strictEqual(enriched.spread, 5);
   assert.strictEqual(enriched.lastTargetPriceUpdate, 1000);

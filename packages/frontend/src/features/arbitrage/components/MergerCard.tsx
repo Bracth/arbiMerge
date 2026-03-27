@@ -6,34 +6,56 @@ import { Typography } from '../../../components/ui/Typography';
 import { cn } from '../../../lib/utils';
 import { TrendType, AcquisitionType } from '@arbimerge/shared';
 import { useRelativeTime } from '../../../hooks/useRelativeTime';
+import { ContextLabel } from './ContextLabel';
 
 interface MergerCardProps {
   merger: Merger;
 }
 
 export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
-  const [priceTrend, setPriceTrend] = useState<'up' | 'down' | null>(null);
-  const prevPriceRef = useRef(merger.currentPrice);
+  const [targetPriceTrend, setTargetPriceTrend] = useState<'up' | 'down' | null>(null);
+  const [buyerPriceTrend, setBuyerPriceTrend] = useState<'up' | 'down' | null>(null);
+  
+  const prevTargetPriceRef = useRef(merger.targetPrice);
+  const prevBuyerPriceRef = useRef(merger.buyerPrice);
 
   const targetRelativeTime = useRelativeTime(merger.lastTargetPriceUpdate);
   const buyerRelativeTime = useRelativeTime(merger.lastBuyerPriceUpdate);
 
   useEffect(() => {
-    if (merger.currentPrice > prevPriceRef.current) {
-      setPriceTrend('up');
-      const timer = setTimeout(() => setPriceTrend(null), 1500);
-      prevPriceRef.current = merger.currentPrice;
+    if (merger.targetPrice > prevTargetPriceRef.current) {
+      setTargetPriceTrend('up');
+      const timer = setTimeout(() => setTargetPriceTrend(null), 1500);
+      prevTargetPriceRef.current = merger.targetPrice;
       return () => clearTimeout(timer);
-    } else if (merger.currentPrice < prevPriceRef.current) {
-      setPriceTrend('down');
-      const timer = setTimeout(() => setPriceTrend(null), 1500);
-      prevPriceRef.current = merger.currentPrice;
+    } else if (merger.targetPrice < prevTargetPriceRef.current) {
+      setTargetPriceTrend('down');
+      const timer = setTimeout(() => setTargetPriceTrend(null), 1500);
+      prevTargetPriceRef.current = merger.targetPrice;
       return () => clearTimeout(timer);
     }
-    prevPriceRef.current = merger.currentPrice;
-  }, [merger.currentPrice]);
+    prevTargetPriceRef.current = merger.targetPrice;
+  }, [merger.targetPrice]);
+
+  useEffect(() => {
+    if (merger.buyerPrice !== null && prevBuyerPriceRef.current !== null) {
+      if (merger.buyerPrice > prevBuyerPriceRef.current) {
+        setBuyerPriceTrend('up');
+        const timer = setTimeout(() => setBuyerPriceTrend(null), 1500);
+        prevBuyerPriceRef.current = merger.buyerPrice;
+        return () => clearTimeout(timer);
+      } else if (merger.buyerPrice < prevBuyerPriceRef.current) {
+        setBuyerPriceTrend('down');
+        const timer = setTimeout(() => setBuyerPriceTrend(null), 1500);
+        prevBuyerPriceRef.current = merger.buyerPrice;
+        return () => clearTimeout(timer);
+      }
+    }
+    prevBuyerPriceRef.current = merger.buyerPrice;
+  }, [merger.buyerPrice]);
 
   const spreadColor = merger.spread > 0 ? 'text-tertiary' : 'text-error';
+  const showBuyerPrice = (merger.acquisitionType === AcquisitionType.STOCK || merger.acquisitionType === AcquisitionType.MIXED) && !!merger.buyerTicker;
 
   return (
     <div className="bg-surface-container-high p-8 flex flex-col justify-between group hover:bg-surface-bright transition-colors duration-300">
@@ -74,23 +96,54 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
             tabular
             className={cn(
               "text-on-surface transition-colors duration-300",
-              priceTrend === 'up' && "flash-green",
-              priceTrend === 'down' && "flash-red"
+              targetPriceTrend === 'up' && "flash-green",
+              targetPriceTrend === 'down' && "flash-red"
             )}
           >
-            ${merger.currentPrice?.toFixed(2)}
+            ${merger.targetPrice?.toFixed(2)}
           </Typography>
+          <ContextLabel className="mt-1">
+            Last update {targetRelativeTime}
+          </ContextLabel>
         </div>
         <div className="flex gap-2 text-outline-variant/30">
           <ChevronsRight className="w-6 h-6" />
         </div>
-        <div className="flex flex-col text-right">
-          <Typography variant="label" className="mb-1">
-            OFFER VALUE
-          </Typography>
-          <Typography variant="h2" tabular className="text-primary">
-            ${merger.effectiveOfferPrice?.toFixed(2)}
-          </Typography>
+        <div className="flex gap-6 text-right">
+          {showBuyerPrice && (
+            <div className="flex flex-col">
+              <Typography variant="label" className="mb-1">
+                ACQUIRER PRICE
+              </Typography>
+              <Typography
+                variant="h2"
+                tabular
+                className={cn(
+                  "text-on-surface transition-colors duration-300",
+                  buyerPriceTrend === 'up' && "flash-green",
+                  buyerPriceTrend === 'down' && "flash-red"
+                )}
+              >
+                {merger.buyerPrice !== null ? `$${merger.buyerPrice.toFixed(2)}` : 'N/A'}
+              </Typography>
+              <ContextLabel className="mt-1">
+                Last update {buyerRelativeTime}
+              </ContextLabel>
+            </div>
+          )}
+          <div className="flex flex-col">
+            <Typography variant="label" className="mb-1">
+              OFFER VALUE
+            </Typography>
+            <Typography variant="h2" tabular className="text-primary">
+              ${merger.effectiveOfferPrice?.toFixed(2)}
+            </Typography>
+            {merger.acquisitionType === AcquisitionType.MIXED && (
+              <ContextLabel italic={true} className="mt-1 block">
+                + ${merger.cashAmount?.toFixed(2) ?? '0.00'} cash + stock
+              </ContextLabel>
+            )}
+          </div>
         </div>
       </div>
 
@@ -120,16 +173,6 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               {merger.spread.toFixed(1)}%
             </Typography>
           </div>
-        </div>
-        <div className="flex gap-2 mt-4 pt-4 border-t border-outline-variant/5">
-          <Badge variant="subtle" color="gray" className="text-[9px] py-0.5 px-1.5">
-            TARGET: {targetRelativeTime}
-          </Badge>
-          {merger.acquisitionType !== AcquisitionType.CASH && (
-            <Badge variant="subtle" color="gray" className="text-[9px] py-0.5 px-1.5">
-              BUYER: {buyerRelativeTime}
-            </Badge>
-          )}
         </div>
       </div>
     </div>
