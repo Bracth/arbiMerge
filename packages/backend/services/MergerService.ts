@@ -15,6 +15,10 @@ export class MergerService {
     return MergerRepository.getMergerByTicker(ticker);
   }
 
+  async getMergerById(id: string) {
+    return MergerRepository.getMergerById(id);
+  }
+
   /**
    * Obtiene las fusiones enriquecidas con precios y cálculos en tiempo real.
    * Útil para los endpoints REST.

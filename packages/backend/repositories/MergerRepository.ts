@@ -29,6 +29,17 @@ export class MergerRepository {
   }
 
   /**
+   * Obtiene una fusión por su ID.
+   */
+  async getMergerById(id: string) {
+    return prisma.merger.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  /**
    * Obtiene una fusión por su ticker objetivo.
    */
   async getMergerByTicker(ticker: string) {

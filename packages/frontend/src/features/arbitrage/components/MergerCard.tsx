@@ -1,11 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { Merger } from '../types';
-import { ChevronsRight } from 'lucide-react';
+import { ChevronsRight, Sparkles } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { Typography } from '../../../components/ui/Typography';
+import { Modal } from '../../../components/ui/Modal';
 import { cn } from '../../../lib/utils';
 import { TrendType, AcquisitionType } from '@arbimerge/shared';
 import { useRelativeTime } from '../../../hooks/useRelativeTime';
+import { useAISummaryStream } from '../hooks/useAISummaryStream';
 
 interface MergerCardProps {
   merger: Merger;
@@ -14,9 +16,20 @@ interface MergerCardProps {
 export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
   const [priceTrend, setPriceTrend] = useState<'up' | 'down' | null>(null);
   const prevPriceRef = useRef(merger.currentPrice);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const targetRelativeTime = useRelativeTime(merger.lastTargetPriceUpdate);
   const buyerRelativeTime = useRelativeTime(merger.lastBuyerPriceUpdate);
+  const { summary, isStreaming, error, startStream, closeStream } = useAISummaryStream();
+
+  const handleModalOpenChange = useCallback((open: boolean) => {
+    setIsModalOpen(open);
+    if (open) {
+      startStream(merger.id);
+    } else {
+      closeStream();
+    }
+  }, [merger.id, startStream, closeStream]);
 
   useEffect(() => {
     if (merger.currentPrice > prevPriceRef.current) {
@@ -131,6 +144,61 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
             </Badge>
           )}
         </div>
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-outline-variant/10">
+        <Modal open={isModalOpen} onOpenChange={handleModalOpenChange}>
+          <Modal.Trigger>
+            <button 
+              className="w-full py-3 flex items-center justify-center gap-2 bg-primary text-on-primary font-bold uppercase tracking-wider border-2 border-primary hover:bg-transparent hover:text-primary transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isStreaming}
+            >
+              <Sparkles className="w-4 h-4" />
+              Analyze Deal
+            </button>
+          </Modal.Trigger>
+
+          <Modal.Content className="max-w-2xl">
+            <Modal.Header>
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span>AI Analysis: {merger.targetTicker} / {merger.buyerName}</span>
+                {isStreaming && (
+                  <Badge variant="solid" color="primary" className="animate-pulse">
+                    Analyzing...
+                  </Badge>
+                )}
+              </div>
+            </Modal.Header>
+            
+            <Modal.Body>
+              {error && (
+                <div className="p-4 mb-4 bg-error-container text-on-error-container border border-error/20 rounded">
+                  <Typography variant="body" className="font-bold">Error</Typography>
+                  <Typography variant="body" className="text-sm">{error}</Typography>
+                </div>
+              )}
+              <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap min-h-[200px] text-on-surface">
+                {summary}
+                {isStreaming && <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />}
+                {!isStreaming && !summary && !error && (
+                  <div className="flex items-center justify-center h-[200px] text-outline-variant">
+                    Initializing analysis...
+                  </div>
+                )}
+              </div>
+            </Modal.Body>
+
+            <Modal.Footer>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border border-outline text-on-surface hover:bg-surface-container-high transition-colors"
+              >
+                Close
+              </button>
+            </Modal.Footer>
+          </Modal.Content>
+        </Modal>
       </div>
     </div>
   );
