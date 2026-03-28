@@ -84,7 +84,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               {merger.acquisitionType}
             </Badge>
           </div>
-          <Typography variant="body" className="text-outline-variant text-sm font-medium uppercase">
+          <Typography variant="body" className="text-outline text-sm font-medium uppercase">
             {merger.targetName}
           </Typography>
         </div>
@@ -150,9 +150,14 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
             <Typography variant="h2" tabular className="text-primary">
               ${merger.effectiveOfferPrice?.toFixed(2)}
             </Typography>
+            {merger.acquisitionType === AcquisitionType.STOCK && merger.exchangeRatio && (
+              <ContextLabel italic={true} className="mt-1 block">
+                Ratio: {merger.exchangeRatio.toFixed(4)} shares
+              </ContextLabel>
+            )}
             {merger.acquisitionType === AcquisitionType.MIXED && (
               <ContextLabel italic={true} className="mt-1 block">
-                + ${merger.cashAmount?.toFixed(2) ?? '0.00'} cash + stock
+                + ${merger.cashAmount?.toFixed(2) ?? '0.00'} cash{merger.exchangeRatio ? ` + ${merger.exchangeRatio.toFixed(4)} stock` : ''}
               </ContextLabel>
             )}
           </div>
@@ -162,11 +167,11 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
       <div className="pt-6 border-t border-outline-variant/10">
         <div className="flex justify-between items-end">
           <div className="flex flex-col">
-            <Typography variant="body" className="text-xs font-bold text-outline-variant uppercase">
+            <Typography variant="body" className="text-xs font-bold text-outline uppercase">
               NET SPREAD
             </Typography>
             {merger.acquisitionType !== AcquisitionType.CASH && (
-              <Typography variant="body" className="text-[10px] text-outline-variant italic">
+              <Typography variant="body" className="text-[10px] text-outline italic">
                 (Dynamic Deal)
               </Typography>
             )}
@@ -224,7 +229,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
                 {summary}
                 {isStreaming && <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />}
                 {!isStreaming && !summary && !error && (
-                  <div className="flex items-center justify-center h-[200px] text-outline-variant">
+                  <div className="flex items-center justify-center h-[200px] text-outline">
                     Initializing analysis...
                   </div>
                 )}
