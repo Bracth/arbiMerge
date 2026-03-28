@@ -97,6 +97,19 @@ app.get('/api/mergers/:id/analyze/stream', async (req, res) => {
   });
 });
 
+app.post('/api/demo/toggle', (req, res) => {
+  if (PriceEmitter.isDemoActive) {
+    PriceEmitter.stopDemo();
+  } else {
+    PriceEmitter.startDemo();
+  }
+  res.json({ success: true, isDemoActive: PriceEmitter.isDemoActive });
+});
+
+app.get('/api/demo/status', (req, res) => {
+  res.json({ isDemoActive: PriceEmitter.isDemoActive });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

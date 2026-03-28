@@ -277,6 +277,45 @@ export class PriceEmitter {
   getLastTimestamp(symbol: string): number | undefined {
     return this.lastPrices[symbol]?.timestamp;
   }
+
+  // --- DEMO MODE FOR HACKATHON ---
+  private demoInterval: NodeJS.Timeout | null = null;
+  public isDemoActive: boolean = false;
+
+  startDemo() {
+    if (this.demoInterval) return;
+    console.log('[PriceEmitter] Iniciando modo DEMO...');
+    this.isDemoActive = true;
+    
+    // Si no había precios todavía, los inicializamos falsos basados en los mergers
+    if (Object.keys(this.lastPrices).length === 0) {
+       for (const merger of this.mergersCache.values()) {
+         this.lastPrices[merger.targetTicker] = { price: (merger.offerPrice || 10) * 0.8, timestamp: Date.now() };
+         if (merger.buyerTicker) {
+           this.lastPrices[merger.buyerTicker] = { price: 50, timestamp: Date.now() };
+         }
+       }
+    }
+
+    this.demoInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [symbol, data] of Object.entries(this.lastPrices)) {
+        // Añadimos un ruido del -0.2% a +0.2% cada 3 segundos
+        const volatility = (Math.random() - 0.5) * 0.004; 
+        const newPrice = data.price * (1 + volatility);
+        this.handlePriceUpdate(symbol, newPrice, now);
+      }
+    }, 3000);
+  }
+
+  stopDemo() {
+    if (this.demoInterval) {
+      clearInterval(this.demoInterval);
+      this.demoInterval = null;
+      this.isDemoActive = false;
+      console.log('[PriceEmitter] Deteniendo modo DEMO...');
+    }
+  }
 }
 
 export default PriceEmitter.getInstance();
