@@ -1,10 +1,9 @@
-# Stage 1: Base
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 
 # Stage 2: Build
 FROM base AS builder
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json packages/backend/package.json
 COPY packages/shared/package.json packages/shared/package.json
@@ -19,20 +18,20 @@ RUN npm run build -w packages/backend
 
 # Stage 3: Production Dependencies
 FROM base AS deps-prod
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json packages/backend/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/frontend/package.json packages/frontend/package.json
 RUN npm ci --omit=dev
 # ¡TRUCO AQUÍ! Copiamos el schema y generamos Prisma en las dependencias de PROD también
-COPY packages/backend/prisma ./packages/backend/prisma
+COPY packages/backend/db ./packages/backend/db
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm run prisma:generate -w packages/backend
 
 # Stage 4: Production Stage
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 ENV NODE_ENV=production
 
 # Copiamos TODOS los node_modules (que ya incluyen Prisma generado correctamente por el Stage 3)

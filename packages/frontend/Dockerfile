@@ -1,5 +1,4 @@
-# Stage 1: Build (Usamos Node solo para compilar)
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copiamos los archivos de configuración del monorepo
@@ -9,7 +8,13 @@ COPY packages/shared/package.json packages/shared/package.json
 COPY packages/frontend/package.json packages/frontend/package.json
 
 # Instalamos todas las dependencias
+# Añadimos libc6-compat para compatibilidad de módulos nativos en Alpine
+RUN apk add --no-cache libc6-compat
 RUN npm ci
+
+# Parche para el bug de NPM con dependencias opcionales de Rolldown/Vite en Docker/Alpine
+# Si el lockfile se generó en otro SO (como Windows), NPM CI a veces se salta los bindings nativos.
+RUN npm install @rolldown/binding-linux-x64-musl@1.0.0-rc.10 lightningcss-linux-x64-musl@1.32.0 @tailwindcss/oxide-linux-x64-musl@4.2.2
 
 # Copiamos el código fuente necesario
 COPY packages/shared packages/shared
