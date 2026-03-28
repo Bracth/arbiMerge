@@ -176,19 +176,35 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               </Typography>
             )}
           </div>
-          <div className="flex flex-col items-end">
-            <Typography
-              variant="h1"
-              tabular
-              className={cn(
-                "font-extrabold tracking-tighter transition-colors duration-500",
-                spreadColor,
-                merger.trend === TrendType.UP && "flash-green-subtle",
-                merger.trend === TrendType.DOWN && "flash-red-subtle"
-              )}
-            >
-              {merger.spread.toFixed(1)}%
-            </Typography>
+          <div className="flex items-end gap-8">
+            {merger.irr !== null && merger.irr !== undefined && (
+              <div className="flex flex-col items-end">
+                <Typography variant="body" className="text-[10px] font-bold text-outline-variant uppercase mb-1">
+                  ANNUALIZED IRR
+                </Typography>
+                <Typography
+                  variant="h2"
+                  tabular
+                  className="font-bold tracking-tight text-primary"
+                >
+                  {merger.irr.toFixed(1)}%
+                </Typography>
+              </div>
+            )}
+            <div className="flex flex-col items-end">
+              <Typography
+                variant="h1"
+                tabular
+                className={cn(
+                  "font-extrabold tracking-tighter transition-colors duration-500",
+                  spreadColor,
+                  merger.trend === TrendType.UP && "flash-green-subtle",
+                  merger.trend === TrendType.DOWN && "flash-red-subtle"
+                )}
+              >
+                {merger.spread.toFixed(1)}%
+              </Typography>
+            </div>
           </div>
         </div>
       </div>

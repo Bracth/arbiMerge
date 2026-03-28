@@ -18,6 +18,7 @@ export interface Merger {
   announcedDate: string;
   expectedClosingDate: string;
   spread: number;
+  irr?: number;
   trend: TrendType;
   lastTargetPriceUpdate: number | null;
   lastBuyerPriceUpdate: number | null;

@@ -45,7 +45,7 @@ model Merger {
   // Metadatos de la operación
   status              MergerStatus @default(PENDING)
   announcedDate       DateTime     // Cuándo se hizo pública la noticia
-  expectedClosingDate String?      // Ej: "Q4 2026" (Suele ser ambiguo en la vida real, por eso String)
+  expectedClosingDate DateTime?    // Ej: "Q4 2026" (Suele ser ambiguo en la vida real, por eso String)
   
   // Timestamps for price updates
   lastTargetPriceUpdate DateTime?
