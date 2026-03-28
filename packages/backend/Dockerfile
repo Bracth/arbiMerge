@@ -25,9 +25,9 @@ COPY packages/shared/package.json packages/shared/package.json
 COPY packages/frontend/package.json packages/frontend/package.json
 RUN npm ci --omit=dev
 # ¡TRUCO AQUÍ! Copiamos el schema y generamos Prisma en las dependencias de PROD también
+COPY packages/backend/seed.ts ./packages/backend/seed.ts
 COPY packages/backend/db ./packages/backend/db
 COPY packages/backend/prisma.config.ts ./packages/backend/prisma.config.ts
-COPY packages/backend/seed.ts ./packages/backend/seed.ts
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm run prisma:generate -w packages/backend
 
 # Stage 4: Production Stage
