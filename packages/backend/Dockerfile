@@ -26,6 +26,7 @@ COPY packages/frontend/package.json packages/frontend/package.json
 RUN npm ci --omit=dev
 # ¡TRUCO AQUÍ! Copiamos el schema y generamos Prisma en las dependencias de PROD también
 COPY packages/backend/db ./packages/backend/db
+COPY packages/backend/prisma.config.ts ./packages/backend/prisma.config.ts
 RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npm run prisma:generate -w packages/backend
 
 # Stage 4: Production Stage
@@ -33,6 +34,10 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 RUN apk add --no-cache openssl libc6-compat
 ENV NODE_ENV=production
+
+# Copiamos el package.json y lock para que npm/npx reconozca los workspaces
+COPY --from=deps-prod --chown=node:node /app/package.json ./package.json
+COPY --from=deps-prod --chown=node:node /app/package-lock.json ./package-lock.json
 
 # Copiamos TODOS los node_modules (que ya incluyen Prisma generado correctamente por el Stage 3)
 COPY --from=deps-prod --chown=node:node /app/node_modules ./node_modules
@@ -46,4 +51,4 @@ COPY --from=builder --chown=node:node /app/packages/backend/dist ./packages/back
 EXPOSE 3000
 
 USER node
-CMD ["sh", "-c", "npx prisma migrate deploy --schema packages/backend/db/schema.prisma && node packages/backend/dist/index.js"]
+CMD ["sh", "-c", "(cd packages/backend && ./node_modules/.bin/prisma migrate deploy) && node packages/backend/dist/index.js"]
