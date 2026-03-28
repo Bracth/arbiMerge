@@ -14,8 +14,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           ArbiMerge
         </Typography>
         <div className="hidden md:flex items-center gap-6">
-          <Settings className="w-6 h-6 text-outline-variant hover:text-primary cursor-pointer transition-colors" />
-          <Bell className="w-6 h-6 text-outline-variant hover:text-primary cursor-pointer transition-colors" />
+          <Settings className="w-6 h-6 text-outline hover:text-primary cursor-pointer transition-colors" />
+          <Bell className="w-6 h-6 text-outline hover:text-primary cursor-pointer transition-colors" />
         </div>
       </header>
       {children}

@@ -18,8 +18,8 @@ export const MarketHeader: React.FC<MarketHeaderProps> = ({ totalDeals }) => {
       </div>
       <div className="mt-6 md:mt-0 text-right">
         <div className="bg-surface-container-high px-4 py-2 inline-block">
-          <Typography variant="label" className="block mb-1 text-outline-variant">
-            TOTAL ACTIVE DEALS
+          <Typography variant="label" className="block mb-1 text-outline">
+            DEALS TRACKED
           </Typography>
           <Typography variant="h2" tabular className="text-3xl text-primary">
             {totalDeals}

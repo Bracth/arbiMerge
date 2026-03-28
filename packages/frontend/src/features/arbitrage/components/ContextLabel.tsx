@@ -12,7 +12,7 @@ export const ContextLabel: React.FC<ContextLabelProps> = ({
   italic = false 
 }) => {
   return (
-    <span className={`text-outline-variant/60 text-[10px] leading-tight ${italic ? 'italic' : ''} ${className}`}>
+    <span className={`text-on-surface-variant text-[10px] leading-tight ${italic ? 'italic' : ''} ${className}`}>
       {children}
     </span>
   );
