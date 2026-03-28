@@ -18,7 +18,7 @@ const createMockMerger = (overrides: Partial<Merger> = {}): Merger => ({
   currency: 'USD',
   status: MergerStatus.PENDING,
   announcedDate: new Date(),
-  expectedClosingDate: 'Q4 2026',
+  expectedClosingDate: new Date('2026-12-31'),
   lastTargetPriceUpdate: null,
   lastBuyerPriceUpdate: null,
   createdAt: new Date(),
@@ -83,4 +83,33 @@ test('SpreadCalculatorService - getTrend', () => {
   assert.strictEqual(calculator.getTrend(10, 5), TrendType.UP);
   assert.strictEqual(calculator.getTrend(5, 10), TrendType.DOWN);
   assert.strictEqual(calculator.getTrend(5, 5), TrendType.STABLE);
+});
+
+test('SpreadCalculatorService - calculateAnnualizedIRR', () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Case 1: 365 days to closing, 10% spread
+  // IRR = ((1 + 0.1)^(365/365) - 1) * 100 = 10%
+  const closingDate1 = new Date(today);
+  closingDate1.setDate(today.getDate() + 365);
+  assert.strictEqual(calculator.calculateAnnualizedIRR(10, closingDate1), 10);
+
+  // Case 2: 73 days to closing (1/5 of a year), 2% spread
+  // IRR = ((1 + 0.02)^(365/73) - 1) * 100 = (1.02^5 - 1) * 100 = 10.408... -> 10.41
+  const closingDate2 = new Date(today);
+  closingDate2.setDate(today.getDate() + 73);
+  assert.strictEqual(calculator.calculateAnnualizedIRR(2, closingDate2), 10.41);
+
+  // Case 3: Deal already closed (today)
+  assert.strictEqual(calculator.calculateAnnualizedIRR(10, today), null);
+
+  // Case 4: Deal expired (yesterday)
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  assert.strictEqual(calculator.calculateAnnualizedIRR(10, yesterday), null);
+
+  // Case 5: Negative spread
+  // 365 days, -10% spread -> -10% IRR
+  assert.strictEqual(calculator.calculateAnnualizedIRR(-10, closingDate1), -10);
 });

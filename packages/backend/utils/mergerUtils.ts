@@ -40,6 +40,11 @@ export function enrichMerger(merger: Merger, params: MergerEnrichmentParams) {
   const spread = SpreadCalculatorService.calculateSpread(merger, targetPrice, buyerPrice);
   const effectiveOfferPrice = SpreadCalculatorService.calculateEffectiveOfferPrice(merger, buyerPrice);
   
+  // Calculate IRR if closing date is available
+  const irr = merger.expectedClosingDate 
+    ? SpreadCalculatorService.calculateAnnualizedIRR(spread, merger.expectedClosingDate)
+    : null;
+
   // Use real-time timestamps if available, otherwise fallback to DB timestamps
   const lastTargetPriceUpdate = getLastTimestamp(merger.targetTicker) || (merger.lastTargetPriceUpdate ? merger.lastTargetPriceUpdate.getTime() : null);
   const lastBuyerPriceUpdate = (merger.buyerTicker && isPublicBuyerRequired(merger)) 
@@ -52,6 +57,7 @@ export function enrichMerger(merger: Merger, params: MergerEnrichmentParams) {
     buyerPrice,
     effectiveOfferPrice,
     spread,
+    irr,
     trend: TrendType.STABLE,
     lastTargetPriceUpdate,
     lastBuyerPriceUpdate

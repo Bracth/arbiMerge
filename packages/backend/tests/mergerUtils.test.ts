@@ -21,7 +21,7 @@ const createMockMerger = (overrides: Partial<Merger> = {}): Merger => ({
   currency: 'USD',
   status: MergerStatus.PENDING,
   announcedDate: new Date(),
-  expectedClosingDate: 'Q4 2026',
+  expectedClosingDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
   lastTargetPriceUpdate: null,
   lastBuyerPriceUpdate: null,
   createdAt: new Date(),
@@ -154,4 +154,28 @@ test('mergerUtils - enrichMerger with fallback to DB timestamps', () => {
 
   assert.strictEqual(enriched.lastTargetPriceUpdate, 500);
   assert.strictEqual(enriched.lastBuyerPriceUpdate, 600);
+});
+
+test('mergerUtils - enrichMerger with IRR', () => {
+  const closingDate = new Date();
+  closingDate.setDate(closingDate.getDate() + 365); // 1 year from now
+
+  const merger = createMockMerger({
+    targetTicker: 'TGT',
+    offerPrice: 110,
+    acquisitionType: AcquisitionType.CASH,
+    expectedClosingDate: closingDate
+  });
+
+  const params = {
+    targetPrice: 100,
+    getLastTimestamp: (s: string) => undefined
+  };
+
+  const enriched = enrichMerger(merger, params);
+
+  // Spread = ((110 - 100) / 100) * 100 = 10%
+  // IRR = ((1 + 0.1)^(365/365) - 1) * 100 = 10%
+  assert.strictEqual(enriched.spread, 10);
+  assert.strictEqual(enriched.irr, 10);
 });
