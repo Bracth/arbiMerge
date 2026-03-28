@@ -46,4 +46,4 @@ COPY --from=builder --chown=node:node /app/packages/backend/dist ./packages/back
 EXPOSE 3000
 
 USER node
-CMD ["node", "packages/backend/dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema packages/backend/db/schema.prisma && node packages/backend/dist/index.js"]

@@ -22,7 +22,7 @@ async function main() {
             currency: 'USD',
             status: MergerStatus.PENDING,
             announcedDate: new Date('2026-03-18T00:00:00Z'),
-            expectedClosingDate: '2026',
+            expectedClosingDate: new Date('2026-07-01T00:00:00Z'),
         },
         {
             targetTicker: 'PERF',
@@ -35,7 +35,6 @@ async function main() {
             currency: 'USD',
             status: MergerStatus.PENDING,
             announcedDate: new Date('2026-03-18T00:00:00Z'),
-            expectedClosingDate: '2026',
         },
         {
             targetTicker: 'NSA',
@@ -48,7 +47,7 @@ async function main() {
             currency: 'USD',
             status: MergerStatus.PENDING,
             announcedDate: new Date('2026-03-18T00:00:00Z'),
-            expectedClosingDate: '2026',
+            expectedClosingDate: new Date('2026-09-30T00:00:00Z'),
         },
     ];
 
