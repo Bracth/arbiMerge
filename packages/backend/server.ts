@@ -13,7 +13,7 @@ const httpServer = createServer(app);
 
 // Middlewares
 app.use(cors({
-  origin: 'https://bratch.cloud',
+  origin: ['https://bratch.cloud', 'https://www.bratch.cloud', 'http://localhost:5173', 'http://localhost'],
   methods: ['GET', 'POST']
 }));
 app.use(express.json());
