@@ -31,6 +31,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://root:rootpassword@db:5432/arbimerge_db?schema=public"
       PORT: 3000
+      FINNHUB_API_KEY: ${FINNHUB_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     # QUITAMOS "ports". Dokploy se encargará de enrutar el dominio a este contenedor
     expose:
       - "3000"

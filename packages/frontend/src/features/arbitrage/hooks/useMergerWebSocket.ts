@@ -4,7 +4,7 @@ import { useMergerStore } from '../../../lib/store';
 import type { PriceUpdate } from '../index';
 import { TrendType } from '@arbimerge/shared';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.bratch.cloud';
 
 export const useMergerWebSocket = () => {
   const socketRef = useRef<Socket | null>(null);

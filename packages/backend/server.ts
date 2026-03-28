@@ -12,7 +12,10 @@ const app = express();
 const httpServer = createServer(app);
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: 'https://bratch.cloud',
+  methods: ['GET', 'POST']
+}));
 app.use(express.json());
 
 // Socket.io initialization

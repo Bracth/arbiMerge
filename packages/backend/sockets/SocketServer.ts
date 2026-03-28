@@ -12,7 +12,7 @@ export class SocketServer {
   init(httpServer: HttpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: '*', // TODO En producci├│n, deber├¡amos restringir esto
+        origin: 'https://bratch.cloud', 
         methods: ['GET', 'POST'],
       },
     });

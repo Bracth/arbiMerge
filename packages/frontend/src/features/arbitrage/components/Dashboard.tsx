@@ -7,7 +7,7 @@ import { TickerTape } from './TickerTape';
 import type { Merger } from '../types';
 import { AcquisitionType, MergerStatus, TrendType } from '@arbimerge/shared';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.bratch.cloud';
 
 const dummyMergers: Merger[] = [
   {
