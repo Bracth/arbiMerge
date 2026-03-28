@@ -112,7 +112,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               targetPriceTrend === 'down' && "flash-red"
             )}
           >
-            ${merger.targetPrice?.toFixed(2)}
+            {merger.targetPrice != null ? `$${merger.targetPrice.toFixed(2)}` : 'N/A'}
           </Typography>
           <ContextLabel className="mt-1">
             Last update {targetRelativeTime}
@@ -136,7 +136,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
                   buyerPriceTrend === 'down' && "flash-red"
                 )}
               >
-                {merger.buyerPrice !== null ? `$${merger.buyerPrice.toFixed(2)}` : 'N/A'}
+                {merger.buyerPrice != null ? `$${merger.buyerPrice.toFixed(2)}` : 'N/A'}
               </Typography>
               <ContextLabel className="mt-1">
                 Last update {buyerRelativeTime}
@@ -148,9 +148,9 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
               OFFER VALUE
             </Typography>
             <Typography variant="h2" tabular className="text-primary">
-              ${merger.effectiveOfferPrice?.toFixed(2)}
+              {merger.effectiveOfferPrice != null ? `$${merger.effectiveOfferPrice.toFixed(2)}` : 'N/A'}
             </Typography>
-            {merger.acquisitionType === AcquisitionType.STOCK && merger.exchangeRatio && (
+            {merger.acquisitionType === AcquisitionType.STOCK && merger.exchangeRatio != null && (
               <ContextLabel italic={true} className="mt-1 block">
                 Ratio: {merger.exchangeRatio.toFixed(4)} shares
               </ContextLabel>
@@ -202,7 +202,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
                   merger.trend === TrendType.DOWN && "flash-red-subtle"
                 )}
               >
-                {merger.spread.toFixed(1)}%
+                {merger.spread != null ? `${merger.spread.toFixed(1)}%` : 'N/A'}
               </Typography>
             </div>
           </div>
