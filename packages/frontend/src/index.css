@@ -57,6 +57,9 @@
   --animate-fade-out: fadeOut 0.15s ease-in;
   --animate-zoom-in: zoomIn 0.2s ease-out;
   --animate-zoom-out: zoomOut 0.15s ease-in;
+  --animate-radar-scan: radarScan 2s linear infinite;
+  
+  --primary-rgb: 173, 198, 255; /* #adc6ff -> rgb(173, 198, 255) */
 }
 
 @layer base {
@@ -145,4 +148,9 @@
 @keyframes zoomOut {
   from { opacity: 1; transform: scale(1); }
   to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes radarScan {
+  0% { transform: translateY(-100px); }
+  100% { transform: translateY(200px); }
 }

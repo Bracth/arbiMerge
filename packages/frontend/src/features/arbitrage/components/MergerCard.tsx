@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { Merger } from '../types';
-import { ChevronsRight, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { Typography } from '../../../components/ui/Typography';
 import { Modal } from '../../../components/ui/Modal';
@@ -9,6 +9,8 @@ import { TrendType, AcquisitionType } from '@arbimerge/shared';
 import { useRelativeTime } from '../../../hooks/useRelativeTime';
 import { useAISummaryStream } from '../hooks/useAISummaryStream';
 import { ContextLabel } from './ContextLabel';
+import { RadarSweep } from '../../../components/ui/RadarSweep';
+import { TypewriterText } from '../../../components/ui/TypewriterText';
 
 interface MergerCardProps {
   merger: Merger;
@@ -23,7 +25,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
 
   const targetRelativeTime = useRelativeTime(merger.lastTargetPriceUpdate);
   const buyerRelativeTime = useRelativeTime(merger.lastBuyerPriceUpdate);
-  const { summary, isStreaming, error, startStream, closeStream } = useAISummaryStream();
+  const { summary, isStreaming, isFinished, error, startStream, closeStream } = useAISummaryStream();
 
   const handleModalOpenChange = useCallback((open: boolean) => {
     setIsModalOpen(open);
@@ -118,9 +120,6 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
             Last update {targetRelativeTime}
           </ContextLabel>
         </div>
-        <div className="flex gap-2 text-outline-variant/30">
-          <ChevronsRight className="w-6 h-6" />
-        </div>
         <div className="flex gap-6 text-right">
           {showBuyerPrice && (
             <div className="flex flex-col">
@@ -179,7 +178,7 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
           <div className="flex items-end gap-8">
             {merger.irr !== null && merger.irr !== undefined && (
               <div className="flex flex-col items-end">
-                <Typography variant="body" className="text-[10px] font-bold text-outline-variant uppercase mb-1">
+                <Typography variant="body" className="text-[10px] font-bold text-on-surface-variant uppercase mb-1">
                   ANNUALIZED IRR
                 </Typography>
                 <Typography
@@ -242,9 +241,11 @@ export const MergerCard: React.FC<MergerCardProps> = ({ merger }) => {
                 </div>
               )}
               <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap min-h-[200px] text-on-surface">
-                {summary}
-                {isStreaming && <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />}
-                {!isStreaming && !summary && !error && (
+                {isStreaming && <RadarSweep />}
+                {!isStreaming && isFinished && summary && (
+                  <TypewriterText text={summary} speed={15} />
+                )}
+                {!isStreaming && !isFinished && !summary && !error && (
                   <div className="flex items-center justify-center h-[200px] text-outline">
                     Initializing analysis...
                   </div>

@@ -5,6 +5,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://api.bratch.clou
 export const useAISummaryStream = () => {
   const [summary, setSummary] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
+  const [isFinished, setIsFinished] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -23,6 +24,7 @@ export const useAISummaryStream = () => {
     setSummary('');
     setError(null);
     setIsStreaming(true);
+    setIsFinished(false);
 
     const url = `${BACKEND_URL}/api/mergers/${mergerId}/analyze/stream`;
     const eventSource = new EventSource(url);
@@ -31,6 +33,7 @@ export const useAISummaryStream = () => {
     eventSource.onmessage = (event) => {
       if (event.data === '[DONE]') {
         closeStream();
+        setIsFinished(true);
         return;
       }
 
@@ -70,6 +73,7 @@ export const useAISummaryStream = () => {
   return {
     summary,
     isStreaming,
+    isFinished,
     error,
     startStream,
     closeStream,
