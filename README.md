@@ -13,6 +13,9 @@ El arbitraje de fusiones y adquisiciones (Merger Arbitrage) es una de las estrat
 ### 📸 Capturas de Pantalla
 ![Vista principal del Dashboard](./assets/dashboard.png)
 
+### 🎥 Video
+![Demo del Hackathon](./assets/demo.gif)
+
 ## ☁️ Despliegue y Hosting con CubePath
 
 Para la puesta en producción de **arbiMerge**, hemos confiado en la infraestructura de **CubePath**. Toda la aplicación (frontend, backend y la base de datos PostgreSQL) está alojada en un **VPS proporcionado por CubePath**. 
