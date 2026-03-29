@@ -10,6 +10,15 @@ El arbitraje de fusiones y adquisiciones (Merger Arbitrage) es una de las estrat
 
 **arbiMerge** es un dashboard analítico en tiempo real diseñado para democratizar el seguimiento de estas operaciones. Agrega automáticamente los datos del mercado, recalcula los spreads netos y la TIR (IRR) anualizada, y los presenta en una interfaz de alto rendimiento que no tiene nada que envidiar a una terminal de grado institucional.
 
+### 📸 Capturas de Pantalla
+![Vista principal del Dashboard](./assets/dashboard.png)
+
+## ☁️ Despliegue y Hosting con CubePath
+
+Para la puesta en producción de **arbiMerge**, hemos confiado en la infraestructura de **CubePath**. Toda la aplicación (frontend, backend y la base de datos PostgreSQL) está alojada en un **VPS proporcionado por CubePath**. 
+
+Para simplificar y gestionar los contenedores de forma eficiente, hemos utilizado **Dockploy**. Esto nos ha permitido automatizar el despliegue con Docker, garantizando un entorno estable y robusto para nuestra demostración en vivo.
+
 ### 🎛️ El Dashboard y la `MergerCard`
 
 El núcleo de nuestra experiencia de usuario es el componente **`MergerCard`**. Hemos jerarquizado la información para darle al trader exactamente los insights accionables en un solo vistazo:
